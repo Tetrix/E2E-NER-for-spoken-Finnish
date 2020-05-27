@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 def calculate_individual_score(all_predicted, all_true, entity_tag):
     precision = []
     recall = []
@@ -34,9 +33,9 @@ def calculate_individual_score(all_predicted, all_true, entity_tag):
 
     # calculate f1
     try:
-        f1 = 0.0
-    except:
         f1 = 2 * (precision * recall) / (precision + recall)
+    except:
+        f1 = 0.0
 
     return precision, recall, f1
 
