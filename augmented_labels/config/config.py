@@ -6,9 +6,9 @@ encoder_hidden_size = 512
 encoder_lr_rate = 0.0001
 decoder_lr_rate = 0.0003
 
-embedding_dim_chars = 300
+embedding_dim = 300
 
-batch_size = 64
+batch_size = 20
 num_epochs = 50
 MAX_LENGTH = 300
 skip_training = False
