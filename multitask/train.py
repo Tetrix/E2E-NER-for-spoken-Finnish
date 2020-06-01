@@ -11,7 +11,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
     lambda_factor = 0.75
     early_stopping = EarlyStopping(patience=15, verbose=False, delta=0)
 
-    for epoch in range(100):
+    for epoch in range(31, 100):
         encoder.train()
         decoder.train()
         decoder_ner.train()

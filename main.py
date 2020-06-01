@@ -23,20 +23,23 @@ print(device)
 #target_whole = prepare_data.load_labels('data/transcripts/whole_small')
 
 print('Loading data..')
-#features_train = prepare_data.load_features('/m/triton/scratch/work/porjazd1/E2E_NER/E2E-NER/data/features/dev_subsample')
-#target_train = prepare_data.load_labels('/m/triton/scratch/work/porjazd1/E2E_NER/E2E-NER/data/transcripts/dev_subsample')
 
-#features_train = features_train[:20]
-#target_train = target_train[:20]
+#features_train = prepare_data.load_features('data/features/train_small')
+#target_train = prepare_data.load_labels('data/transcripts/augmented/augmented_train_small')
 
-features_train = prepare_data.load_features('data/features/dev_subsample')
-target_train = prepare_data.load_labels('data/transcripts/dev_subsample')
+#features_dev = prepare_data.load_features('data/features/dev_small')
+#target_dev = prepare_data.load_labels('data/transcripts/augmented/augmented_dev_small')
+
+
+features_train = prepare_data.load_features('data/features/temp')
+target_train = prepare_data.load_labels('data/transcripts/augmented/augmented_temp')
+
+features_train = features_train[:20]
+target_train = target_train[:20]
 
 features_dev = features_train
 target_dev = target_train
 
-#features_dev = prepare_data.load_features('data/features/dev_small')
-#target_dev = prepare_data.load_labels('data/transcripts/dev_small')
 
 
 print('Done...')
@@ -45,18 +48,18 @@ print('Done...')
 #target_test = prepare_data.load_labels('data/transcripts/test')
 
 # generate index dictionaries
-#char2idx, idx2char = prepare_data.encode_data(target_train + target_dev)
-#with open('weights/char2idx_new.pkl', 'wb') as f:
-#    pickle.dump(char2idx, f, protocol=pickle.HIGHEST_PROTOCOL)
-#with open('weights/idx2char_new.pkl', 'wb') as f:
-#    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
+char2idx, idx2char = prepare_data.encode_data(target_train + target_dev)
+with open('weights/char2idx_new.pkl', 'wb') as f:
+    pickle.dump(char2idx, f, protocol=pickle.HIGHEST_PROTOCOL)
+with open('weights/idx2char_new.pkl', 'wb') as f:
+    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+#with open('weights/char2idx_new.pkl', 'rb') as f:
+#    char2idx = pickle.load(f)
+#with open('weights/idx2char_new.pkl', 'rb') as f:
+#    idx2char = pickle.load(f)
 
-with open('weights/char2idx_new.pkl', 'rb') as f:
-    char2idx = pickle.load(f)
-with open('weights/idx2char_new.pkl', 'rb') as f:
-    idx2char = pickle.load(f)
 
 # convert labels to indices
 indexed_target_train = prepare_data.label_to_idx(target_train, char2idx)
@@ -116,16 +119,16 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     #load weights to continue training from a checkpoint
-    checkpoint = torch.load('weights/new/state_dict_55.pt')
-    encoder.load_state_dict(checkpoint['encoder'])
-    decoder.load_state_dict(checkpoint['decoder'])
-    encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-    decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+    #checkpoint = torch.load('weights/triton/state_dict.pt')
+    #encoder.load_state_dict(checkpoint['encoder'])
+    #decoder.load_state_dict(checkpoint['decoder'])
+    #encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+    #decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
 
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/new/state_dict_67.pt')
+    checkpoint = torch.load('weights/triton/state_dict.pt')
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
 

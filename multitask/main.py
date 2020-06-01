@@ -24,21 +24,26 @@ print(device)
 #target_whole = prepare_data.load_labels('data/transcripts/whole_small')
 
 print('Loading data..')
-features_train = prepare_data.load_features('../data/features/train_small')
-target_train = prepare_data.load_labels('../data/transcripts/train_small')
-tags_train = prepare_data.load_labels('../data/transcripts/ner_transcripts_train')
+#features_train = prepare_data.load_features('../data/features/train_small')
+#target_train = prepare_data.load_labels('../data/transcripts/train_small')
+#tags_train = prepare_data.load_labels('../data/transcripts/ner_transcripts_train')
 
-#features_train = features_train[:20]
-#target_train = target_train[:20]
-#tags_train = tags_train[:20]
+#features_dev = prepare_data.load_features('../data/features/dev_small')
+#target_dev = prepare_data.load_labels('../data/transcripts/dev_small')
+#tags_dev = prepare_data.load_labels('../data/transcripts/ner_transcripts_dev')
 
-#features_dev = features_train
-#target_dev = target_train
-#tags_dev = tags_train
+features_train = prepare_data.load_features('../data/features/dev_subsample')
+target_train = prepare_data.load_labels('../data/transcripts/dev_subsample')
+tags_train = prepare_data.load_labels('../data/transcripts/ner_transcripts_subsample')
 
-features_dev = prepare_data.load_features('../data/features/dev_small')
-target_dev = prepare_data.load_labels('../data/transcripts/dev_small')
-tags_dev = prepare_data.load_labels('../data/transcripts/ner_transcripts_dev')
+features_train = features_train[:1000]
+target_train = target_train[:1000]
+tags_train = tags_train[:1000]
+
+features_dev = features_train
+target_dev = target_train
+tags_dev = tags_train
+
 print('Done...')
 
 print('Loading embeddings...')
@@ -48,22 +53,22 @@ print('Done...')
 
 
 # generate index dictionaries
-char2idx, idx2char = prepare_data.encode_data(target_train)
+#char2idx, idx2char = prepare_data.encode_data(target_train)
 
 # generate index dictionaries
-with open('weights/char2idx_new.pkl', 'wb') as f:
-    pickle.dump(char2idx, f, protocol=pickle.HIGHEST_PROTOCOL)
-with open('weights/idx2char_new.pkl', 'wb') as f:
-    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
+#with open('weights/char2idx_new.pkl', 'wb') as f:
+#    pickle.dump(char2idx, f, protocol=pickle.HIGHEST_PROTOCOL)
+#with open('weights/idx2char_new.pkl', 'wb') as f:
+#    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 tag2idx = {'O': 1, 'PER': 2, 'LOC': 3}
 idx2tag = {1: 'O', 2: 'PER', 3: 'LOC'}
 
-#with open('weights/char2idx.pkl', 'rb') as f:
-#    char2idx = pickle.load(f)
-#with open('weights/idx2char.pkl', 'rb') as f:
-#    idx2char = pickle.load(f)
+with open('weights/char2idx_new.pkl', 'rb') as f:
+    char2idx = pickle.load(f)
+with open('weights/idx2char_new.pkl', 'rb') as f:
+    idx2char = pickle.load(f)
 
 
 # convert labels to indices
@@ -132,18 +137,18 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    #checkpoint = torch.load('weights/state_dict.pt')
-    #encoder.load_state_dict(checkpoint['encoder'])
-    #decoder.load_state_dict(checkpoint['decoder'])
-    #decoder_ner.load_state_dict(checkpoint['decoder_ner'])
-    #encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-    #decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
-    #decoder_ner_optimizer.load_state_dict(checkpoint['decoder_ner_optimizer'])
+    checkpoint = torch.load('weights/triton/state_dict_31.pt')
+    encoder.load_state_dict(checkpoint['encoder'])
+    decoder.load_state_dict(checkpoint['decoder'])
+    decoder_ner.load_state_dict(checkpoint['decoder_ner'])
+    encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+    decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+    decoder_ner_optimizer.load_state_dict(checkpoint['decoder_ner_optimizer'])
 
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, encoder_optimizer, decoder_optimizer, decoder_ner_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/state_dict.pt')
+    checkpoint = torch.load('weights/triton/state_dict_42.pt')
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
     decoder_ner.load_state_dict(checkpoint['decoder_ner'])

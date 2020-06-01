@@ -2,7 +2,7 @@ import torch
 from jiwer import wer
 
 import utils.beam_search_decoding as bsd
-
+from utils.calculate_f1 import print_scores
 
 
 def get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag, test_data, MAX_LENGTH):
@@ -16,6 +16,8 @@ def get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag
     with torch.no_grad():
         all_predictions = []
         all_labels = []
+        all_tag_predictions = []
+        all_tags = []
         
         for l, batch in enumerate(test_data):
             pad_input_seqs, input_seq_lengths, pad_target_seqs, target_seq_lengths, pad_word_seqs, word_seq_lengths, pad_tag_seqs, tag_seq_lengths = batch
@@ -31,6 +33,7 @@ def get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag
             mask = pad_tag_seqs.clone()
             mask[mask != 0] = 1
             mask = mask.byte()
+
             ner_predictions = decoder_ner.crf.decode(decoder_ner_output, mask=mask)[0]
             # end sequence tagging
 
@@ -39,9 +42,10 @@ def get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag
             
             true_tags = [idx2tag[l.item()] for l in pad_tag_seqs]
             ner_predictions = [idx2tag[l] for l in ner_predictions if l != 0]
+            
+            all_tag_predictions.append(ner_predictions)
+            all_tags.append(true_tags)
 
-            #true_tags = true_tags[1:-1]
-            #ner_predictions = ner_predictions[1:-1]
 
             true_labels = [idx2char[l.item()] for l in pad_target_seqs if l.item() not in (1, 2)]
             true_labels = ''.join(true_labels)
@@ -60,6 +64,9 @@ def get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag
             print(true_labels)
             print(predictions)
         print('Word error rate: ', wer(all_labels, all_predictions) * 100)
+        print('Micro AVG F1')
+        print_scores(all_tag_predictions, all_tags)
+        
 
 
 

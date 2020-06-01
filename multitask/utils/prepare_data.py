@@ -26,7 +26,7 @@ def load_labels(features_path):
     return label_array
 
 
-
+#TODO Add <UNK> as a special token. Currently it is processed as characters
 def encode_data(labels_data):
     char2idx = {}
     idx2char = {}
@@ -50,6 +50,36 @@ def encode_data(labels_data):
                 idx2char[len(idx2char) + 1] = char
 
     return char2idx, idx2char
+
+
+#def encode_data(labels_data):
+#    char2idx = {}
+#    idx2char = {}
+#
+#
+#    char2idx['<sos>'] = 1
+#    idx2char[1] = '<sos>'
+#
+#    char2idx['<eos>'] = 2
+#    idx2char[2] = '<eos>'
+#
+#    char2idx['<UNK>'] = 3
+#    idx2char[3] = '<UNK>'
+#
+#
+#    for sent in labels_data:
+#        sentence = sent[0].split()
+#        for word in sentence:
+#            if word in ['<UNK>', '<sos>', '<eos>']:
+#                char2idx[word] = len(char2idx) + 1
+#                idx2char[len(idx2char) + 1] = char
+#            else:
+#                for char in word:
+#                    if char not in char2idx:
+#                        char2idx[char] = len(char2idx) + 1
+#                        idx2char[len(idx2char) + 1] = char
+#
+#    return char2idx, idx2char
 
 
 def label_to_idx(labels, char2idx):
@@ -88,25 +118,9 @@ def word_to_idx(data, embeddings):
 
 
 
-#def word_to_idx(words, word2idx):
-#    res = []
-#    for sent in words:
-#        temp_sent = []
-#        sent = sent[0].split()
-#        # add sos and eos tokens
-#        #sent.insert(0, '<sos>')
-#        #sent.append('<eos>')
-#        for word in sent:
-#            temp_sent.append([word2idx[word]])
-#        res.append(torch.LongTensor(temp_sent))
-#
-#    return res
-#
-
 def tag_to_idx(tags, tag2idx):
     res = []
     for sent in tags:
-        sent = sent[:-3]
         temp_sent = []
         for tag in sent:
             if tag != '\n':
@@ -114,7 +128,6 @@ def tag_to_idx(tags, tag2idx):
                 temp_sent.append([tag2idx[tag]])
         res.append(torch.LongTensor(temp_sent))
     return res
-
 
 
 

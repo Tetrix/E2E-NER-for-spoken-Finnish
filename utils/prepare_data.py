@@ -14,17 +14,47 @@ def load_features(features_path):
 
     return feature_array
 
-
+#encoding='ISO-8859-1')
 def load_labels(features_path):
     label_array = []
     for file in sorted(os.listdir(features_path)):
-        with open(os.path.join(features_path, file), 'r', encoding='ISO-8859-1') as f:
+        with open(os.path.join(features_path, file), 'r', encoding='utf-8') as f:
             transcript = f.readlines()
             label_array.append(transcript)
 
     return label_array
 
 
+
+#def encode_data(labels_data):
+#    char2idx = {}
+#    idx2char = {}
+#
+#
+#    char2idx['<sos>'] = 1
+#    idx2char[1] = '<sos>'
+#
+#    char2idx['<eos>'] = 2
+#    idx2char[2] = '<eos>'
+#
+#    char2idx['<UNK>'] = 3
+#    idx2char[3] = '<UNK>'
+#
+#
+#    #char2idx['<O>'] = 4
+#    #idx2char[4] = '<O>'
+#    #char2idx['<PER>'] = 5
+#    #idx2char[5] = '<PER>'
+#
+#
+#    for sent in labels_data:
+#        for char in sent[0]:
+#            if char not in char2idx:
+#                char2idx[char] = len(char2idx) + 1
+#                idx2char[len(idx2char) + 1] = char
+#    
+#    return char2idx, idx2char
+#
 
 def encode_data(labels_data):
     char2idx = {}
@@ -39,54 +69,41 @@ def encode_data(labels_data):
 
     char2idx['<UNK>'] = 3
     idx2char[3] = '<UNK>'
+    
+    char2idx['O'] = 4
+    idx2char[4] = 'O'
 
-
-    #char2idx['<O>'] = 4
-    #idx2char[4] = '<O>'
-    #char2idx['<PER>'] = 5
-    #idx2char[5] = '<PER>'
+    char2idx['PER'] = 5
+    idx2char[5] = 'PER'
+    
+    char2idx['LOC'] = 6
+    idx2char[6] = 'LOC'
+    
+    char2idx[' '] = 7
+    idx2char[7] = ' '
 
 
     for sent in labels_data:
-        for char in sent[0]:
-            if char not in char2idx:
-                char2idx[char] = len(char2idx) + 1
-                idx2char[len(idx2char) + 1] = char
+        sentence = sent[0].split()
+        for word in sentence:
+            if word in ['<UNK>', '<sos>', '<eos>', 'O', 'PER', 'LOC', ' ']:
+                pass
+            else:
+                for char in word:
+                    if char not in char2idx:
+                        char2idx[char] = len(char2idx) + 1
+                        idx2char[len(idx2char) + 1] = char
     
     return char2idx, idx2char
-
-
-def label_to_idx(labels, char2idx):
-    res = []
-    for sent in labels:
-        temp_sent = [] 
-        for char in sent[0]:
-            temp_sent.append([char2idx[char]])
-        # add eos
-        temp_sent.append([char2idx[' ']])
-        temp_sent.append([char2idx['<eos>']])
-
-        #res.append(autograd.Variable(torch.LongTensor(temp_sent)))
-        res.append(torch.LongTensor(temp_sent))
-
-    return res
-
 
 
 
 #def label_to_idx(labels, char2idx):
 #    res = []
 #    for sent in labels:
-#        temp_sent = []
-#        sent = [i for j in sent[0].split() for i in (j, ' ')][:-1]
-#        for word in sent:
-#            # TODO handle the <UNK> token
-#            if word == '<O>' or word == '<PER>':
-#                print(char2idx)
-#                temp_sent.append([char2idx[word]])
-#            else: 
-#                for char in word:
-#                    temp_sent.append([char2idx[char]])
+#        temp_sent = [] 
+#        for char in sent[0]:
+#            temp_sent.append([char2idx[char]])
 #        # add eos
 #        temp_sent.append([char2idx[' ']])
 #        temp_sent.append([char2idx['<eos>']])
@@ -95,7 +112,29 @@ def label_to_idx(labels, char2idx):
 #        res.append(torch.LongTensor(temp_sent))
 #
 #    return res
-#
+
+
+def label_to_idx(labels, char2idx):
+    res = []
+    for sent in labels:
+        temp_sent = [] 
+        sent = sent[0].split()
+        for i, word in enumerate(sent):
+            if word in ['<UNK>', '<sos>', '<eos>', 'O', 'PER', 'LOC']:
+                temp_sent.append([char2idx[word]])
+            else:
+                for char in word:
+                    temp_sent.append([char2idx[char]])
+            if len(sent) != (i):
+                temp_sent.append([char2idx[' ']])
+
+        # add eos
+        temp_sent.append([char2idx[' ']])
+        temp_sent.append([char2idx['<eos>']])
+        res.append(torch.LongTensor(temp_sent))
+
+    return res
+
 
 
 
