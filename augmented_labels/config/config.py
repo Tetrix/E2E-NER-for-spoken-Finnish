@@ -8,7 +8,7 @@ decoder_lr_rate = 0.0003
 
 embedding_dim = 300
 
-batch_size = 20
+batch_size = 64
 num_epochs = 50
 MAX_LENGTH = 300
-skip_training = False
+skip_training = True

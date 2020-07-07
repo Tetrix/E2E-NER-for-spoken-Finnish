@@ -9,7 +9,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
     tf_rate = 1
     early_stopping = EarlyStopping(patience=15, verbose=False, delta=0)
 
-    for epoch in range(10):   
+    for epoch in range(57, 100):   
         encoder.train()
         decoder.train()
 
@@ -26,7 +26,6 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
 
             decoder_input = torch.ones(batch_size, 1).long().to(device) 
             decoder_hidden = (encoder_hidden[0].sum(0, keepdim=True), encoder_hidden[1].sum(0, keepdim=True))
-            #decoder_hidden = encoder_hidden[0].sum(0, keepdim=True)
 
             teacher_forcing = True if random.random() <= tf_rate else False
 
@@ -68,7 +67,6 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
             
                 decoder_input = torch.ones(batch_size, 1).long().to(device)
                 decoder_hidden = (encoder_hidden[0].sum(0, keepdim=True), encoder_hidden[1].sum(0, keepdim=True))
-                #decoder_hidden = encoder_hidden[0].sum(keepdim=True)
 
                 teacher_forcing = True if random.random() <= tf_rate else False
             
@@ -97,7 +95,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
         print('[Epoch: %d] train_loss: %.4f    val_loss: %.4f' % (epoch+1, train_loss.item(), dev_loss.item()))
 
         with open('loss.txt', 'a') as f:
-            f.write(str(train_loss.item()) + '  ' + str(dev_loss.item()) + '\n')
+            f.write(str(epoch + 1) + '  ' + str(train_loss.item()) + '  ' + str(dev_loss.item()) + '\n')
 
 
         print('saving the models...')
@@ -106,6 +104,6 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
         'decoder': decoder.state_dict(),
         'encoder_optimizer': encoder_optimizer.state_dict(),
         'decoder_optimizer': decoder_optimizer.state_dict()
-        }, 'weights/triton/state_dict_' + str(epoch+1) + '.pt')
+        }, 'weights/augmented/state_dict_' + str(epoch+1) + '.pt')
         #}, 'weights/state_dict.pt')
 

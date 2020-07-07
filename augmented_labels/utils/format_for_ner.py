@@ -1,12 +1,12 @@
 import os
 
 
-for filename in os.listdir('../data/transcripts/dev_subsample'):
-    if os.path.isfile(os.path.join('../data/transcripts/dev_subsample', filename)):
-        with open(os.path.join('../data/transcripts/dev_subsample/', filename), 'r') as f:
+for filename in os.listdir('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp'):
+    if os.path.isfile(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp', filename)):
+        with open(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp', filename), 'r') as f:
             data = f.readlines()
 
-            with open(os.path.join('../data/transcripts/ner_transcripts_subsample/temp', filename), 'w') as o:
+            with open(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/formatted', filename), 'w') as o:
                 for sent in data:
                     sent = sent.split()
                     for word in sent:

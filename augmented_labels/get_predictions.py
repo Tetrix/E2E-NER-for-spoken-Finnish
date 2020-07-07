@@ -35,9 +35,9 @@ def get_predictions(encoder, decoder, batch_size, idx2char, test_data, MAX_LENGT
             all_predictions.append(predictions)
             all_labels.append(true_labels)
 
-            print('new')
-            print(true_labels)
-            print(predictions)
+            #print('new')
+            #print(true_labels)
+            #print(predictions)
         print('Word error rate: ', wer(all_labels, all_predictions) * 100)
 
 
