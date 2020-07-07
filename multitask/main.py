@@ -14,35 +14,46 @@ from config.config import *
 from train import train
 from get_predictions import get_predictions
 
-
+from utils.language_model.model import CharRNN
+from utils.language_model.helpers import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print(device)
 
+# load language model related stuff
+language_model = CharRNN(n_characters, 512, n_characters, 'lstm', 4)
+language_model.load_state_dict(torch.load('utils/language_model/language_model.pt'))
+language_model = language_model.to(device)
+language_model.eval()
+
+
 # load features and labels
-#target_whole = prepare_data.load_labels('data/transcripts/whole_small')
-
 print('Loading data..')
-#features_train = prepare_data.load_features('../data/features/train_small')
-#target_train = prepare_data.load_labels('../data/transcripts/train_small')
-#tags_train = prepare_data.load_labels('../data/transcripts/ner_transcripts_train')
 
-#features_dev = prepare_data.load_features('../data/features/dev_small')
-#target_dev = prepare_data.load_labels('../data/transcripts/dev_small')
-#tags_dev = prepare_data.load_labels('../data/transcripts/ner_transcripts_dev')
+#features_train = prepare_data.load_features('../augmented_labels/data/features/train')
+#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/train.txt')
+#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_train.txt')
 
-features_train = prepare_data.load_features('../data/features/dev_subsample')
-target_train = prepare_data.load_labels('../data/transcripts/dev_subsample')
-tags_train = prepare_data.load_labels('../data/transcripts/ner_transcripts_subsample')
+#features_dev = prepare_data.load_features_combined('../augmented_labels/data/features/dev.npy')
+#target_dev = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev.txt')
+#tags_dev = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_dev.txt')
 
-features_train = features_train[:1000]
-target_train = target_train[:1000]
-tags_train = tags_train[:1000]
+
+
+features_train = prepare_data.load_features_combined('../augmented_labels/data/features/dev_subsample.npy')
+#target_train = prepare_data.load_transcripts('output/e2e_asr_combined.txt')
+target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev_subsample.txt')
+tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_subsample.txt')
+
+features_train = features_train[:5]
+target_train = target_train[:5]
+tags_train = tags_train[:5]
 
 features_dev = features_train
 target_dev = target_train
 tags_dev = tags_train
+
 
 print('Done...')
 
@@ -56,18 +67,18 @@ print('Done...')
 #char2idx, idx2char = prepare_data.encode_data(target_train)
 
 # generate index dictionaries
-#with open('weights/char2idx_new.pkl', 'wb') as f:
+#with open('weights/char2idx.pkl', 'wb') as f:
 #    pickle.dump(char2idx, f, protocol=pickle.HIGHEST_PROTOCOL)
-#with open('weights/idx2char_new.pkl', 'wb') as f:
+#with open('weights/idx2char.pkl', 'wb') as f:
 #    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 tag2idx = {'O': 1, 'PER': 2, 'LOC': 3}
 idx2tag = {1: 'O', 2: 'PER', 3: 'LOC'}
 
-with open('weights/char2idx_new.pkl', 'rb') as f:
+with open('weights/char2idx.pkl', 'rb') as f:
     char2idx = pickle.load(f)
-with open('weights/idx2char_new.pkl', 'rb') as f:
+with open('weights/idx2char.pkl', 'rb') as f:
     idx2char = pickle.load(f)
 
 
@@ -137,18 +148,18 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    checkpoint = torch.load('weights/triton/state_dict_31.pt')
-    encoder.load_state_dict(checkpoint['encoder'])
-    decoder.load_state_dict(checkpoint['decoder'])
-    decoder_ner.load_state_dict(checkpoint['decoder_ner'])
-    encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-    decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
-    decoder_ner_optimizer.load_state_dict(checkpoint['decoder_ner_optimizer'])
+    #checkpoint = torch.load('weights/decoder_whole_data/state_dict_13.pt')
+    #encoder.load_state_dict(checkpoint['encoder'])
+    #decoder.load_state_dict(checkpoint['decoder'])
+    #decoder_ner.load_state_dict(checkpoint['decoder_ner'])
+    #encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+    #decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+    #decoder_ner_optimizer.load_state_dict(checkpoint['decoder_ner_optimizer'])
 
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, encoder_optimizer, decoder_optimizer, decoder_ner_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/triton/state_dict_42.pt')
+    checkpoint = torch.load('weights/decoder_whole_data/state_dict_28.pt')
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
     decoder_ner.load_state_dict(checkpoint['decoder_ner'])
@@ -165,6 +176,6 @@ pairs_batch_train = DataLoader(dataset=dev_data,
                     pin_memory=True)
 
 
-get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag, pairs_batch_train, MAX_LENGTH)
+get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, idx2char, idx2tag, pairs_batch_train, MAX_LENGTH)
 
 

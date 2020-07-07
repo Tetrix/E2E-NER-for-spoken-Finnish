@@ -11,7 +11,7 @@ decoder_ner_lr_rate = 0.0003
 embedding_dim_chars = 300
 embedding_dim_words = 300
 
-batch_size = 64
+batch_size = 5
 num_epochs = 50
 MAX_LENGTH = 300
-skip_training = True
+skip_training = False

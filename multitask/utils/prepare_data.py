@@ -6,6 +6,17 @@ import torch.autograd as autograd
 from torch.nn.utils.rnn import pad_sequence
 
 
+# load features combined in one file
+def load_features_combined(features_path):
+    feature_array = []
+    features = np.load(features_path, allow_pickle=True)
+    
+    for feature in features:
+        feature_array.append(autograd.Variable(torch.FloatTensor(feature)))
+
+    return feature_array
+
+
 def load_features(features_path):
     feature_array = []
     for file in sorted(os.listdir(features_path)):
@@ -13,6 +24,36 @@ def load_features(features_path):
         feature_array.append(autograd.Variable(torch.FloatTensor(feature)))
 
     return feature_array
+
+
+def load_transcripts(features_path):
+    label_array = []
+    with open(features_path, 'r', encoding='utf-8') as f:
+        data = f.readlines()
+
+    for sent in data:
+        sent = sent.rstrip()
+        label_array.append([sent])
+
+    return label_array
+
+
+def load_tags(features_path):
+    tag_array = []
+    temp = []
+    with open(features_path, 'r', encoding='utf-8') as f:
+        data = f.readlines()
+
+    for tag in data:
+        if tag != '\n':
+            tag = tag.rstrip()
+            temp.append(tag)
+        else:
+            tag_array.append(temp)
+            temp = []
+    
+    return tag_array
+
 
 
 def load_labels(features_path):

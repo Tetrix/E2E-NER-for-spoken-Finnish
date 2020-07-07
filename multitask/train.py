@@ -8,10 +8,10 @@ from utils.early_stopping import EarlyStopping
 def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, encoder_optimizer, decoder_optimizer, decoder_ner_optimizer, criterion, batch_size, num_epochs, device):
     clip = 50.0
     tf_rate = 1
-    lambda_factor = 0.75
+    lambda_factor = 0.80
     early_stopping = EarlyStopping(patience=15, verbose=False, delta=0)
 
-    for epoch in range(31, 100):
+    for epoch in range(100):
         encoder.train()
         decoder.train()
         decoder_ner.train()
@@ -49,9 +49,9 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
                         
             # NER BRANCH
-            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths)
+            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
             pad_tag_seqs = pad_tag_seqs.squeeze()
-
+            
             mask = pad_tag_seqs.clone()
             mask[mask != 0] = 1
             mask = mask.byte()
@@ -59,6 +59,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
             negative_log_likelihood = -decoder_ner.crf(decoder_ner_output, pad_tag_seqs, mask=mask)
             
             loss = (lambda_factor * train_loss) +  ((1 - lambda_factor) * negative_log_likelihood)
+            #loss = train_loss
             
 
             # backward step
@@ -110,8 +111,8 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
             
             
-            # NER BRANCH            
-            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths)
+            # NER BRANCH
+            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
             pad_tag_seqs = pad_tag_seqs.squeeze()
 
             mask = pad_tag_seqs.clone()
@@ -120,6 +121,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
             negative_log_likelihood_dev = -decoder_ner.crf(decoder_ner_output, pad_tag_seqs, mask=mask)
             loss_dev = (lambda_factor * dev_loss) +  ((1 - lambda_factor) * negative_log_likelihood_dev)
+            #loss_dev = dev_loss
 
 
         #early_stopping(complete_loss_dev, (encoder, decoder, encoder_optimizer, decoder_optimizer))
@@ -129,19 +131,23 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
         print('[Epoch: %d] train_loss: %.4f    val_loss: %.4f' % (epoch+1, loss.item(), loss_dev.item()))
 
-        with open('loss.txt', 'a') as f:
-            f.write(str(loss.item()) + '  ' + str(loss_dev.item()) + '\n')
+
+        #with open('loss/loss_vgg_whole_data.txt', 'a') as f:
+        #    f.write(str(epoch + 1) + '	' + str(loss.item()) + '  ' + str(loss_dev.item()) + '\n')
+
+        #with open('loss/loss_vgg_whole_data_separate.txt', 'a') as f:
+        #    f.write(str(negative_log_likelihood.item()) + '  ' + str(negative_log_likelihood_dev.item()) + '    ' + str(train_loss.item()) + ' ' + str(dev_loss.item()) + '\n')
 
 
-        print('saving the models...')
-        torch.save({
-        'encoder': encoder.state_dict(),
-        'decoder': decoder.state_dict(),
-        'decoder_ner': decoder_ner.state_dict(),
-        'encoder_optimizer': encoder_optimizer.state_dict(),
-        'decoder_optimizer': decoder_optimizer.state_dict(),
-        'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
-        }, 'weights/triton/state_dict_' + str(epoch+1) + '.pt')
-        #}, 'weights/state_dict.pt')
+    print('saving the models...')
+    torch.save({
+    'encoder': encoder.state_dict(),
+    'decoder': decoder.state_dict(),
+    'decoder_ner': decoder_ner.state_dict(),
+    'encoder_optimizer': encoder_optimizer.state_dict(),
+    'decoder_optimizer': decoder_optimizer.state_dict(),
+    'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
+    #}, 'weights/decoder_vgg_whole_data/state_dict_' + str(epoch+1) + '.pt')
+    }, 'weights/state_dict.pt')
 
 

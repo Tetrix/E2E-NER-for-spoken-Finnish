@@ -69,8 +69,6 @@ class Encoder(nn.Module):
 
 
 
-
-
 # Decoder with Luong attention
 class Decoder(nn.Module):
     def __init__(self, embedding_dim, hidden_size, output_size, num_layers, encoder_num_layers, device):
@@ -97,7 +95,7 @@ class Decoder(nn.Module):
         embedding = self.embedding(input_tensor)
         #embedding = self.dropout(embedding)
         embedding = embedding.permute(1, 0, 2)
-    
+        
         output, hidden = self.lstm(embedding, decoder_hidden)
  
         scores = torch.bmm(encoder_output.permute(1, 0, 2), output.permute(1, 2, 0))
@@ -134,12 +132,11 @@ class DecoderNER(nn.Module):
         self.crf = CRF(self.tag_size)
 
 
-    def forward(self, input_tensor, decoder_hidden, word_seq_lengths):
+    def forward(self, input_tensor, decoder_hidden, word_seq_lengths, encoder_output):
         input_tensor = input_tensor.squeeze(-1)
         if input_tensor.dim() == 1:
             input_tensor = input_tensor.unsqueeze(-1)
         
-        #embedding = self.embedding(input_tensor)
         packed_embedding = pack_padded_sequence(input_tensor, word_seq_lengths, enforce_sorted=False)
         output, hidden = self.lstm(packed_embedding, decoder_hidden)
         output = pad_packed_sequence(output)[0]

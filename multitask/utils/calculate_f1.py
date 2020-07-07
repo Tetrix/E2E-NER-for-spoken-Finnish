@@ -15,27 +15,28 @@ def calculate_individual_score(all_predicted, all_true, entity_tag):
                 fp += 1
             elif all_predicted[seq][tag] != entity_tag and all_true[seq][tag] == entity_tag:
                 fn += 1
-
+    
+    
     # calculate precision
-    try:
-        precision = tp / (tp + fp)
-    except:
+    if tp + fp == 0:
         precision = 0
+    else:
+        precision = tp / (tp + fp)
 
     # calculate recall
-    try:
-        recall = tp / (tp + fn)
-    except:
+    if tp + fn == 0:
         recall = 0
+    else:
+        recall = tp / (tp + fn)
     
     precision = np.array(precision)
     recall = np.array(recall)
 
     # calculate f1
-    try:
-        f1 = 2 * (precision * recall) / (precision + recall)
-    except:
+    if precision + recall == 0:
         f1 = 0.0
+    else:
+        f1 = 2 * (precision * recall) / (precision + recall)
 
     return precision, recall, f1
 
@@ -67,18 +68,20 @@ def print_scores(all_predicted, all_true):
     per_tp, per_fp, per_fn = calculate_average_score(all_predicted, all_true, 'PER')
     loc_tp, loc_fp, loc_fn = calculate_average_score(all_predicted, all_true, 'LOC')
     
-    try:
+    if (per_tp + loc_tp + per_fp + loc_fp) == 0:
+        micro_avg_precision = 0
+    else:
         micro_avg_precision = (per_tp + loc_tp) / (per_tp + loc_tp + per_fp + loc_fp)
-    except:
-        micro_avg_precision = 0.0
-    try:
+
+    if (per_tp + loc_tp + per_fn + loc_fn) == 0:
+        micro_avg_recall = 0
+    else:
         micro_avg_recall = (per_tp + loc_tp) / (per_tp + loc_tp + per_fn + loc_fn)
-    except:
-        micro_avg_recall = 0.0
-    try:
+
+    if (micro_avg_precision + micro_avg_recall) == 0:
+        avg_f1 = 0
+    else:
         avg_f1 = 2 * (micro_avg_precision * micro_avg_recall) / (micro_avg_precision + micro_avg_recall)
-    except:
-        avg_f1 = 0.0
 
     print('micro avg precision: %.4f    micro avg recall: %.4f    avg f1: %.4f' %(micro_avg_precision, micro_avg_recall, avg_f1))
 
