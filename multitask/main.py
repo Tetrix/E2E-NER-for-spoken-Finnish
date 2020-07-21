@@ -2,14 +2,16 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import torchvision.models as models
 
 import numpy as np
 import pickle
 import gensim
+import fasttext
 
 import utils.prepare_data as prepare_data
 from utils.radam import RAdam
-from model import Encoder, Decoder, DecoderNER
+from model import VggExtractor, Encoder, Decoder, DecoderNER
 from config.config import *
 from train import train
 from get_predictions import get_predictions
@@ -22,8 +24,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # load language model related stuff
-language_model = CharRNN(n_characters, 512, n_characters, 'lstm', 4)
-language_model.load_state_dict(torch.load('utils/language_model/language_model.pt'))
+language_model = CharRNN(n_characters, 64, n_characters, 'lstm', 2)
+language_model.load_state_dict(torch.load('utils/language_model/language_model.pt', map_location='cpu'))
 language_model = language_model.to(device)
 language_model.eval()
 
@@ -31,18 +33,16 @@ language_model.eval()
 # load features and labels
 print('Loading data..')
 
-#features_train = prepare_data.load_features('../augmented_labels/data/features/train')
-#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/train.txt')
-#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_train.txt')
+#features_train = prepare_data.load_features('../augmented_labels/data/features/train_small')
+#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/train_small.txt')
+#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_train_small.txt')
 
-#features_dev = prepare_data.load_features_combined('../augmented_labels/data/features/dev.npy')
-#target_dev = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev.txt')
-#tags_dev = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_dev.txt')
-
+#features_dev = prepare_data.load_features_combined('../augmented_labels/data/features/dev_small.npy')
+#target_dev = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev_small.txt')
+#tags_dev = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_dev_small.txt')
 
 
 features_train = prepare_data.load_features_combined('../augmented_labels/data/features/dev_subsample.npy')
-#target_train = prepare_data.load_transcripts('output/e2e_asr_combined.txt')
 target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev_subsample.txt')
 tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_subsample.txt')
 
@@ -59,7 +59,8 @@ print('Done...')
 
 print('Loading embeddings...')
 #embeddings = gensim.models.KeyedVectors.load_word2vec_format('weights/embeddings/fin-word2vec.bin', binary=True, limit=100000)
-embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
+embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
+#embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
 print('Done...')
 
 
@@ -122,23 +123,45 @@ pairs_batch_dev = DataLoader(dataset=dev_data,
                     pin_memory=True)
 
 
+# load pretrained VGG model and initialize the VggExtractor
+#vgg16 = models.vgg16(pretrained=True)
+#first_conv_layer = [nn.Conv2d(1, 3, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True)]
+#first_conv_layer.extend(list(vgg16.features))
+
+#vgg16.features= nn.Sequential(*first_conv_layer)
+
+# freeze all the layers except the first
+#for param in vgg16.features[1:].parameters():
+#    param.requires_grad = False
+#for param in vgg16.classifier.parameters():
+#    param.requires_grad = False
+
+#vgg16.to(device)
+#vgg_extractor = VggExtractor(vgg16, device).to(device)
+#vgg_extractor_optimizer = optim.Adam(vgg_extractor.parameters(), lr=decoder_lr_rate)
+
+
+
+
 # initialize the Encoder
 encoder = Encoder(features_train[0].size(1), encoder_hidden_size, encoder_layers, batch_size, device).to(device)
-encoder_optimizer = optim.Adam(encoder.parameters(), lr=encoder_lr_rate)
+encoder_optimizer = optim.Adam(encoder.parameters(), lr=encoder_lr)
 
 # initialize the Decoder
-decoder = Decoder(embedding_dim_chars, encoder_hidden_size, len(char2idx)+1, decoder_layers, encoder_layers, device).to(device)
-decoder_optimizer = optim.Adam(decoder.parameters(), lr=decoder_lr_rate)
+decoder = Decoder(embedding_dim_chars, encoder_hidden_size, len(char2idx)+1, decoder_layers, encoder_layers, batch_size, attention_type, device).to(device)
+decoder_optimizer = optim.Adam(decoder.parameters(), lr=decoder_lr)
 
 # initialize the DecoderNER
 decoder_ner = DecoderNER(embedding_dim_words, decoder_ner_hidden_size, len(tag2idx)+1, device).to(device)
-decoder_ner_optimizer = optim.Adam(decoder_ner.parameters(), lr=decoder_ner_lr_rate)
+decoder_ner_optimizer = optim.Adam(decoder_ner.parameters(), lr=decoder_ner_lr)
 
 
+#print(vgg_extractor)
 print(encoder)
 print(decoder)
 print(decoder_ner)
 
+#total_trainable_params_vgg = sum(p.numel() for p in vgg_extractor.parameters() if p.requires_grad)
 total_trainable_params_encoder = sum(p.numel() for p in encoder.parameters() if p.requires_grad)
 total_trainable_params_decoder = sum(p.numel() for p in decoder.parameters() if p.requires_grad)
 total_trainable_params_decoder_ner = sum(p.numel() for p in decoder_ner.parameters() if p.requires_grad)
@@ -148,7 +171,7 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    #checkpoint = torch.load('weights/decoder_whole_data/state_dict_13.pt')
+    #checkpoint = torch.load('weights/decoder_big_whole_data/state_dict_26.pt')
     #encoder.load_state_dict(checkpoint['encoder'])
     #decoder.load_state_dict(checkpoint['decoder'])
     #decoder_ner.load_state_dict(checkpoint['decoder_ner'])
@@ -159,14 +182,14 @@ if skip_training == False:
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, encoder_optimizer, decoder_optimizer, decoder_ner_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/decoder_whole_data/state_dict_28.pt')
+    checkpoint = torch.load('weights/state_dict.pt', map_location=torch.device('cpu'))
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
     decoder_ner.load_state_dict(checkpoint['decoder_ner'])
 
 
 batch_size = 1
-dev_data = dev_data[:1000]
+dev_data = dev_data[:]
 #train_data = train_data[:64]
 
 pairs_batch_train = DataLoader(dataset=dev_data,

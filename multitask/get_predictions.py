@@ -27,11 +27,14 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
         for l, batch in enumerate(test_data):
             pad_input_seqs, input_seq_lengths, pad_target_seqs, target_seq_lengths, pad_word_seqs, word_seq_lengths, pad_tag_seqs, tag_seq_lengths = batch
             pad_input_seqs, pad_target_seqs, pad_word_seqs, pad_tag_seqs = pad_input_seqs.to(device), pad_target_seqs.to(device), pad_word_seqs.to(device), pad_tag_seqs.to(device)
-
+            
+            # extract features with VGG
+            #pad_input_seqs = vgg_extractor(pad_input_seqs)
             encoder_output, encoder_hidden = encoder(pad_input_seqs, input_seq_lengths)
             decoder_hidden = (encoder_hidden[0].sum(0, keepdim=True), encoder_hidden[1].sum(0, keepdim=True))
 
             # NER prediction
+            #encoder_hidden_ner = (encoder_hidden[0][:2, :, :], encoder_hidden[1][:2, :, :])
             decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
 
             ner_predictions = decoder_ner.crf.decode(decoder_ner_output)[0]
@@ -39,7 +42,7 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
 
             features = pad_input_seqs.permute(1, 0, 2)
             res = bsd.beam_decode(decoder, features, decoder_hidden, target_seq_lengths, idx2char, encoder_output)
-            
+             
             # Language model rescoring
             candidates = []
             beam_sentences = res[0][0]
@@ -52,14 +55,16 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
                         temp.append(idx2char[char.item()])
                 temp = ''.join(temp)
                 candidates.append((temp, beam_scores[k]))
-             
+            
+
             ranked_candidates = {}
             for c in candidates:
-                candidate, probability = generate(language_model, c[0], c[1])
+                candidate, probability = generate(language_model, c[0], c[1], device)
                 ranked_candidates[probability] = candidate
              
             rescored_predictions = {k: ranked_candidates[k] for k in sorted(ranked_candidates, reverse=True)}
-
+    
+            #print('ranked')
             #for key, value in rescored_predictions.items():
             #    print(key, value)
             
@@ -87,11 +92,11 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
      
             
             # print statistics
-            #print('new')
+            print('new')
             #print(true_tags)
             #print(ner_predictions)
-            #print(true_labels)
-            #print(predictions)
+            print(true_labels)
+            print(predictions)
             #print(rescored_predictions)
         print('Word error rate: ', wer(all_labels, all_predictions) * 100)
         print('Word error rate: ', wer(all_labels, all_predictions_rescored) * 100)

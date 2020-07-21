@@ -25,7 +25,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
             decoder_ner_optimizer.zero_grad()
-        
+           
             encoder_output, encoder_hidden = encoder(pad_input_seqs, input_seq_lengths)
             decoder_input = torch.ones(batch_size, 1).long().to(device)
             decoder_hidden = (encoder_hidden[0].sum(0, keepdim=True), encoder_hidden[1].sum(0, keepdim=True))
@@ -49,6 +49,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
                         
             # NER BRANCH
+            #encoder_hidden_ner = (encoder_hidden[0][:2, :, :], encoder_hidden[1][:2, :, :])
             decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
             pad_tag_seqs = pad_tag_seqs.squeeze()
             
@@ -64,7 +65,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
 
             # backward step
             loss.backward()
-
+            
             torch.nn.utils.clip_grad_norm_(encoder.parameters(), clip)
             torch.nn.utils.clip_grad_norm_(decoder.parameters(), clip)
             torch.nn.utils.clip_grad_norm_(decoder_ner.parameters(), clip)
@@ -72,7 +73,6 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
             encoder_optimizer.step()
             decoder_optimizer.step()
             decoder_ner_optimizer.step()
-
 
 
         # CALCULATE EVALUATION
@@ -112,6 +112,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
             
             
             # NER BRANCH
+            #encoder_hidden_ner = (encoder_hidden[0][:2, :, :], encoder_hidden[1][:2, :, :])
             decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
             pad_tag_seqs = pad_tag_seqs.squeeze()
 
@@ -132,22 +133,19 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
         print('[Epoch: %d] train_loss: %.4f    val_loss: %.4f' % (epoch+1, loss.item(), loss_dev.item()))
 
 
-        #with open('loss/loss_vgg_whole_data.txt', 'a') as f:
+        #with open('loss/loss_hybrid.txt', 'a') as f:
         #    f.write(str(epoch + 1) + '	' + str(loss.item()) + '  ' + str(loss_dev.item()) + '\n')
 
-        #with open('loss/loss_vgg_whole_data_separate.txt', 'a') as f:
-        #    f.write(str(negative_log_likelihood.item()) + '  ' + str(negative_log_likelihood_dev.item()) + '    ' + str(train_loss.item()) + ' ' + str(dev_loss.item()) + '\n')
 
-
-    print('saving the models...')
-    torch.save({
-    'encoder': encoder.state_dict(),
-    'decoder': decoder.state_dict(),
-    'decoder_ner': decoder_ner.state_dict(),
-    'encoder_optimizer': encoder_optimizer.state_dict(),
-    'decoder_optimizer': decoder_optimizer.state_dict(),
-    'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
-    #}, 'weights/decoder_vgg_whole_data/state_dict_' + str(epoch+1) + '.pt')
-    }, 'weights/state_dict.pt')
+        #print('saving the models...')
+        #torch.save({
+        #'encoder': encoder.state_dict(),
+        #'decoder': decoder.state_dict(),
+        #'decoder_ner': decoder_ner.state_dict(),
+        #'encoder_optimizer': encoder_optimizer.state_dict(),
+        #'decoder_optimizer': decoder_optimizer.state_dict(),
+        #'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
+        #}, 'weights/decoder_hybrid/state_dict_' + str(epoch+1) + '.pt')
+        ##}, 'weights/state_dict.pt')
 
 

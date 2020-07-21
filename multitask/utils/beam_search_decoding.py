@@ -46,7 +46,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
     '''
 
     beam_width = 10
-    topk = 1  # how many sentence do you want to generate
+    topk = 2  # how many sentence do you want to generate
     decoded_batch = []
 
     # decoding goes sentence by sentence
