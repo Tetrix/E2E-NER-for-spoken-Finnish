@@ -21,29 +21,27 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
         all_predictions_rescored = []
         all_labels = []
         all_tag_predictions = []
-        all_tags = [] 
+        all_tags = []
 
         
         for l, batch in enumerate(test_data):
             pad_input_seqs, input_seq_lengths, pad_target_seqs, target_seq_lengths, pad_word_seqs, word_seq_lengths, pad_tag_seqs, tag_seq_lengths = batch
             pad_input_seqs, pad_target_seqs, pad_word_seqs, pad_tag_seqs = pad_input_seqs.to(device), pad_target_seqs.to(device), pad_word_seqs.to(device), pad_tag_seqs.to(device)
             
-            # extract features with VGG
-            #pad_input_seqs = vgg_extractor(pad_input_seqs)
             encoder_output, encoder_hidden = encoder(pad_input_seqs, input_seq_lengths)
             decoder_hidden = (encoder_hidden[0].sum(0, keepdim=True), encoder_hidden[1].sum(0, keepdim=True))
 
             # NER prediction
-            #encoder_hidden_ner = (encoder_hidden[0][:2, :, :], encoder_hidden[1][:2, :, :])
-            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden, word_seq_lengths, encoder_output)
+            encoder_hidden_ner = (encoder_hidden[0][:2, :, :], encoder_hidden[1][:2, :, :])
+            decoder_ner_output, decoder_ner_hidden = decoder_ner(pad_word_seqs, encoder_hidden_ner, word_seq_lengths, encoder_output)
 
             ner_predictions = decoder_ner.crf.decode(decoder_ner_output)[0]
             # end sequence tagging
 
             features = pad_input_seqs.permute(1, 0, 2)
             res = bsd.beam_decode(decoder, features, decoder_hidden, target_seq_lengths, idx2char, encoder_output)
-             
-            # Language model rescoring
+            
+             Language model rescoring
             candidates = []
             beam_sentences = res[0][0]
             beam_scores = res[0][1]
@@ -64,9 +62,6 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
              
             rescored_predictions = {k: ranked_candidates[k] for k in sorted(ranked_candidates, reverse=True)}
     
-            #print('ranked')
-            #for key, value in rescored_predictions.items():
-            #    print(key, value)
             
             rescored_predictions = rescored_predictions.values()
             rescored_predictions = iter(rescored_predictions)
@@ -89,15 +84,16 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
 
             all_predictions.append(predictions)
             all_labels.append(true_labels)
-     
+            
             
             # print statistics
-            print('new')
+            #print('new')
             #print(true_tags)
             #print(ner_predictions)
-            print(true_labels)
-            print(predictions)
+            #print(true_labels)
+            #print(predictions)
             #print(rescored_predictions)
+
         print('Word error rate: ', wer(all_labels, all_predictions) * 100)
         print('Word error rate: ', wer(all_labels, all_predictions_rescored) * 100)
         print('Micro AVG F1')
@@ -129,7 +125,7 @@ def get_predictions(encoder, decoder, decoder_ner, language_model, batch_size, i
         #        sentence = all_labels[i].split()
         #        for j in range(len(all_tag_predictions[i])):
         #            f.write(sentence[j] + '\t' + all_tag_predictions[i][j] + '\n')
-        #        f.write('\n')
+        #        f.write('\n') 
 
- 
+
 

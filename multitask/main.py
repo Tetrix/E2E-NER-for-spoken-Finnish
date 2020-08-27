@@ -7,11 +7,11 @@ import torchvision.models as models
 import numpy as np
 import pickle
 import gensim
-import fasttext
+#import fasttext
 
 import utils.prepare_data as prepare_data
 from utils.radam import RAdam
-from model import VggExtractor, Encoder, Decoder, DecoderNER
+from model import Encoder, Decoder, DecoderNER
 from config.config import *
 from train import train
 from get_predictions import get_predictions
@@ -19,12 +19,14 @@ from get_predictions import get_predictions
 from utils.language_model.model import CharRNN
 from utils.language_model.helpers import *
 
+
+torch.manual_seed(0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 print(device)
 
 # load language model related stuff
-language_model = CharRNN(n_characters, 64, n_characters, 'lstm', 2)
+language_model = CharRNN(n_characters, 650, n_characters, 'lstm', 2)
 language_model.load_state_dict(torch.load('utils/language_model/language_model.pt', map_location='cpu'))
 language_model = language_model.to(device)
 language_model.eval()
@@ -33,34 +35,53 @@ language_model.eval()
 # load features and labels
 print('Loading data..')
 
-#features_train = prepare_data.load_features('../augmented_labels/data/features/train_small')
-#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/train_small.txt')
-#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_train_small.txt')
+# whole data normalized
+#features_train = prepare_data.load_features('../augmented_labels/data/normalized/features/train')
+#target_train = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/train.txt')
+#tags_train = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_train.txt')
 
-#features_dev = prepare_data.load_features_combined('../augmented_labels/data/features/dev_small.npy')
-#target_dev = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev_small.txt')
-#tags_dev = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_dev_small.txt')
+#features_dev = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/dev.npy')
+#target_dev = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/dev.txt')
+#tags_dev = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_dev.txt')
 
 
-features_train = prepare_data.load_features_combined('../augmented_labels/data/features/dev_subsample.npy')
-target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev_subsample.txt')
-tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_subsample.txt')
 
-features_train = features_train[:5]
-target_train = target_train[:5]
-tags_train = tags_train[:5]
+# whole data
+#features_train = prepare_data.load_features('../augmented_labels/data/features/train')
+#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/train.txt')
+#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_train.txt')
+
+#features_dev = prepare_data.load_features_combined('../augmented_labels/data/features/dev.npy')
+#target_dev = prepare_data.load_transcripts('../augmented_labels/data/transcripts/dev.txt')
+#tags_dev = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_dev.txt')
+
+
+
+# test normalized
+features_train = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/test.npy')
+target_train = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/test.txt')
+tags_train = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_test.txt')
+
+# test
+#features_train = prepare_data.load_features_combined('../augmented_labels/data/features/test.npy')
+#target_train = prepare_data.load_transcripts('../augmented_labels/data/transcripts/test.txt')
+#tags_train = prepare_data.load_tags('../augmented_labels/data/transcripts/ner_transcripts/ner_transcripts_test.txt')
+
+features_train = features_train[:16]
+target_train = target_train[:16]
+tags_train = tags_train[:16]
 
 features_dev = features_train
 target_dev = target_train
 tags_dev = tags_train
 
-
 print('Done...')
+
 
 print('Loading embeddings...')
 #embeddings = gensim.models.KeyedVectors.load_word2vec_format('weights/embeddings/fin-word2vec.bin', binary=True, limit=100000)
-embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
-#embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
+#embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
+embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
 print('Done...')
 
 
@@ -74,8 +95,13 @@ print('Done...')
 #    pickle.dump(idx2char, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-tag2idx = {'O': 1, 'PER': 2, 'LOC': 3}
-idx2tag = {1: 'O', 2: 'PER', 3: 'LOC'}
+# used for normalized
+tag2idx = {'O': 1, 'PER': 2, 'LOC': 3, 'ORG': 4}
+idx2tag = {1: 'O', 2: 'PER', 3: 'LOC', 4: 'ORG'}
+
+#tag2idx = {'O': 1, 'PER': 2, 'LOC': 3}
+#idx2tag = {1: 'O', 2: 'PER', 3: 'LOC'}
+
 
 with open('weights/char2idx.pkl', 'rb') as f:
     char2idx = pickle.load(f)
@@ -123,24 +149,6 @@ pairs_batch_dev = DataLoader(dataset=dev_data,
                     pin_memory=True)
 
 
-# load pretrained VGG model and initialize the VggExtractor
-#vgg16 = models.vgg16(pretrained=True)
-#first_conv_layer = [nn.Conv2d(1, 3, kernel_size=3, stride=1, padding=1, dilation=1, groups=1, bias=True)]
-#first_conv_layer.extend(list(vgg16.features))
-
-#vgg16.features= nn.Sequential(*first_conv_layer)
-
-# freeze all the layers except the first
-#for param in vgg16.features[1:].parameters():
-#    param.requires_grad = False
-#for param in vgg16.classifier.parameters():
-#    param.requires_grad = False
-
-#vgg16.to(device)
-#vgg_extractor = VggExtractor(vgg16, device).to(device)
-#vgg_extractor_optimizer = optim.Adam(vgg_extractor.parameters(), lr=decoder_lr_rate)
-
-
 
 
 # initialize the Encoder
@@ -148,7 +156,7 @@ encoder = Encoder(features_train[0].size(1), encoder_hidden_size, encoder_layers
 encoder_optimizer = optim.Adam(encoder.parameters(), lr=encoder_lr)
 
 # initialize the Decoder
-decoder = Decoder(embedding_dim_chars, encoder_hidden_size, len(char2idx)+1, decoder_layers, encoder_layers, batch_size, attention_type, device).to(device)
+decoder = Decoder(embedding_dim_chars, encoder_hidden_size, attention_hidden_size, num_filters, len(char2idx)+1, decoder_layers, encoder_layers, batch_size, attention_type, device).to(device)
 decoder_optimizer = optim.Adam(decoder.parameters(), lr=decoder_lr)
 
 # initialize the DecoderNER
@@ -171,7 +179,7 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    #checkpoint = torch.load('weights/decoder_big_whole_data/state_dict_26.pt')
+    #checkpoint = torch.load('weights/hybrid_whole_normalized/state_dict_15.pt')
     #encoder.load_state_dict(checkpoint['encoder'])
     #decoder.load_state_dict(checkpoint['decoder'])
     #decoder_ner.load_state_dict(checkpoint['decoder_ner'])
@@ -182,15 +190,13 @@ if skip_training == False:
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, encoder_optimizer, decoder_optimizer, decoder_ner_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/state_dict.pt', map_location=torch.device('cpu'))
+    checkpoint = torch.load('weights/hybrid_whole_normalized/state_dict_15.pt', map_location=torch.device('cpu'))
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
     decoder_ner.load_state_dict(checkpoint['decoder_ner'])
 
 
 batch_size = 1
-dev_data = dev_data[:]
-#train_data = train_data[:64]
 
 pairs_batch_train = DataLoader(dataset=dev_data,
                     batch_size=batch_size,

@@ -46,7 +46,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
     '''
 
     beam_width = 10
-    topk = 2  # how many sentence do you want to generate
+    topk = 1  # how many sentence do you want to generate
     decoded_batch = []
 
     # decoding goes sentence by sentence
@@ -60,7 +60,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
         # Start with the start of the sentence token
         decoder_input = torch.LongTensor([[SOS_token]]).to(device)
 
-        decoder_context = torch.autograd.Variable(torch.zeros(1, 1, decoder.hidden_size*2)).to(device)
+        decoder_context = torch.autograd.Variable(torch.zeros(1, 1, decoder.encoder_hidden_size*2)).to(device)
 
         # Number of sentence to generate
         endnodes = []
