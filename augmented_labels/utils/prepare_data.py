@@ -6,7 +6,7 @@ import torch.autograd as autograd
 from torch.nn.utils.rnn import pad_sequence
 
 
-
+# load features combined in one file
 def load_features_combined(features_path):
     feature_array = []
     features = np.load(features_path, allow_pickle=True)
@@ -28,7 +28,7 @@ def load_features(features_path):
 
 def load_transcripts(features_path):
     label_array = []
-    with open(features_path, 'r') as f:
+    with open(features_path, 'r', encoding='utf-8') as f:
         data = f.readlines()
 
     for sent in data:
@@ -36,6 +36,7 @@ def load_transcripts(features_path):
         label_array.append([sent])
 
     return label_array
+
 
 
 def load_labels(features_path):
@@ -75,44 +76,22 @@ def encode_data(labels_data):
     return char2idx, idx2char
 
 
-#def encode_data(labels_data):
-#    char2idx = {}
-#    idx2char = {}
-#
-#
-#    char2idx['<sos>'] = 1
-#    idx2char[1] = '<sos>'
-#
-#    char2idx['<eos>'] = 2
-#    idx2char[2] = '<eos>'
-#
-#    char2idx['<UNK>'] = 3
-#    idx2char[3] = '<UNK>'
-#
-#
-#    for sent in labels_data:
-#        sentence = sent[0].split()
-#        for word in sentence:
-#            if word in ['<UNK>', '<sos>', '<eos>']:
-#                char2idx[word] = len(char2idx) + 1
-#                idx2char[len(idx2char) + 1] = char
-#            else:
-#                for char in word:
-#                    if char not in char2idx:
-#                        char2idx[char] = len(char2idx) + 1
-#                        idx2char[len(idx2char) + 1] = char
-#
-#    return char2idx, idx2char
-
 
 def label_to_idx(labels, char2idx):
     res = []
     for sent in labels:
         temp_sent = []
-        for char in sent[0]:
-            temp_sent.append([char2idx[char]])
+        sent = sent[0].split()
+        for word in sent:
+            if word in ['O', 'PER', 'LOC', 'ORG', '<UNK>']:
+                temp_sent.append([char2idx[word]])
+                temp_sent.append([char2idx[' ']])
+            else:
+                for char in word:
+                    temp_sent.append([char2idx[char]])
+                temp_sent.append([char2idx[' ']])
         # add eos token
-        temp_sent.append([char2idx[' ']])
+        #temp_sent.append([char2idx[' ']])
         temp_sent.append([char2idx['<eos>']])
 
         #res.append(autograd.Variable(torch.LongTensor(temp_sent)))
@@ -127,6 +106,7 @@ def prepare_word_sequence(seq, embeddings):
         try:
             res.append(embeddings[w])
         except:
+            print(w)
             res.append(np.random.normal(scale=0.6, size=(300, )))
     res = autograd.Variable(torch.FloatTensor(res))
  
@@ -184,7 +164,8 @@ def collate(list_of_samples):
     pad_input_seqs = pad_sequence(input_seqs, padding_value=padding_value)
 
     # pad output sequences
-    pad_output_seqs = pad_sequence(output_seqs, padding_value=padding_value)
+    pad_output_seqs = pad_sequence(output_seqs, padding_value=padding_value) 
+
 
     return pad_input_seqs, input_seq_lengths, pad_output_seqs, output_seq_lengths
 

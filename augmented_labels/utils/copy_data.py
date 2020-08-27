@@ -7,8 +7,8 @@ import numpy as np
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-destination_transcripts = os.path.join(current_dir, '/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/transcripts/whole')
-destination_audio = os.path.join(current_dir, '../data/audio/whole')
+destination_transcripts = os.path.join(current_dir, '/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/transcripts/whole_normalized')
+#destination_audio = os.path.join('/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/audio')
 
 
 with open('../data/text_whole', 'r') as f:
@@ -27,14 +27,14 @@ with open('../data/wav_whole.scp') as f:
 #            name = data[j].split()[0]
 #            transcript = data[j].split()[1:]
 #            transcript = ' '.join(transcript)
-
+#    
 #            with open(os.path.join(destination_transcripts, name + '.txt'), 'w') as f:
 #                f.write(transcript)
-
-            #copy audio
-            #sample = line.split()[1][1:]
-            #source = os.path.join('/m/triton', sample)
-            #copy(source, destination_audio)
+#
+#    #copy audio
+#    sample = line.split()[1][1:]
+#    source = os.path.join('/m/triton', sample)
+#    copy(source, destination_audio)
 
 
 
@@ -58,9 +58,10 @@ for i in range(len(audio)):
             source = os.path.join('/m/triton', sample)
 
             (rate, sig) = wav.read(source)
-            fbank_feat = logfbank(sig, rate, nfilt=60)
+            fbank_feat = logfbank(sig, rate, nfilt=40)
+            fbank_feat -= (np.mean(fbank_feat, axis=0) + 1e-8)
 
-            np.save(os.path.join('/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/features/whole', name), fbank_feat)
+            np.save(os.path.join('/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/features/normalized/whole_normalized', name), fbank_feat)
 
 
 

@@ -9,7 +9,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
     tf_rate = 1
     early_stopping = EarlyStopping(patience=15, verbose=False, delta=0)
 
-    for epoch in range(57, 100):   
+    for epoch in range(150):   
         encoder.train()
         decoder.train()
 
@@ -94,7 +94,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimize
 
         print('[Epoch: %d] train_loss: %.4f    val_loss: %.4f' % (epoch+1, train_loss.item(), dev_loss.item()))
 
-        with open('loss.txt', 'a') as f:
+        with open('loss/loss.txt', 'a') as f:
             f.write(str(epoch + 1) + '  ' + str(train_loss.item()) + '  ' + str(dev_loss.item()) + '\n')
 
 

@@ -1,12 +1,13 @@
 import os
 
+source = '/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/transcripts/normalized/test'
 
-for filename in os.listdir('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp'):
-    if os.path.isfile(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp', filename)):
-        with open(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/temp', filename), 'r') as f:
+for filename in os.listdir(source):
+    if os.path.isfile(os.path.join(source, filename)):
+        with open(os.path.join(source, filename), 'r') as f:
             data = f.readlines()
 
-            with open(os.path.join('/m/triton/scratch/elec/puhe/p/porjazd1/E2E_NER/E2E-NER/augmented_labels/data/transcripts/formatted', filename), 'w') as o:
+            with open(os.path.join('/m/teamwork/t40511_asr/p/NER/datasets/parliament_whole/ner/normalized/ner_formatted_test', filename), 'w') as o:
                 for sent in data:
                     sent = sent.split()
                     for word in sent:
