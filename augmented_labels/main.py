@@ -7,7 +7,7 @@ import torchvision.models as models
 import numpy as np
 import pickle
 import gensim
-#import fasttext
+import fasttext
 
 import utils.prepare_data as prepare_data
 from utils.radam import RAdam
@@ -19,13 +19,17 @@ from get_predictions import get_predictions
 from utils.language_model.model import CharRNN
 from utils.language_model.helpers import *
 
+
+torch.manual_seed(0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+print('augmented_small 17')
 
 print(device)
 
 # load language model related stuff
-language_model = CharRNN(n_characters, 650, n_characters, 'lstm', 2)
-language_model.load_state_dict(torch.load('utils/language_model/language_model.pt', map_location='cpu'))
+language_model = CharRNN(n_characters, 1024, n_characters, 'lstm', 2)
+language_model.load_state_dict(torch.load('utils/language_model/lm_weights/language_model_1024_10000.pt', map_location='cpu'))
 language_model = language_model.to(device)
 language_model.eval()
 
@@ -33,31 +37,46 @@ language_model.eval()
 # load features and labels
 print('Loading data..')
 
-# whole data normalized
-features_train = prepare_data.load_features('data/normalized/features/train')
-target_train = prepare_data.load_transcripts('data/normalized/augmented/train.txt')
+# whole data ASR
+#features_train = prepare_data.load_features('data/normalized/features/train')
+#target_train = prepare_data.load_transcripts('data/normalized/transcripts/train.txt')
 
-features_dev = prepare_data.load_features_combined('data/normalized/features/dev.npy')
-target_dev = prepare_data.load_transcripts('data/normalized/augmented/dev.txt')
+#features_dev = prepare_data.load_features_combined('data/normalized/features/dev.npy')
+#target_dev = prepare_data.load_transcripts('data/normalized/transcripts/dev.txt')
 
 
-# test normalized
+# whole data normalized augmented
+#features_train = prepare_data.load_features('data/normalized/features/train_small')
+#target_train = prepare_data.load_transcripts('data/normalized/augmented/train_small.txt')
+
+#features_dev = prepare_data.load_features_combined('data/normalized/features/dev_small.npy')
+#arget_dev = prepare_data.load_transcripts('data/normalized/augmented/dev_small.txt')
+
+
+
+# test normalized ASR
 #features_train = prepare_data.load_features_combined('data/normalized/features/test.npy')
-#target_train = prepare_data.load_transcripts('data/normalized/augmented/test.txt')
+#target_train = prepare_data.load_transcripts('data/normalized/transcripts/test.txt')
 
-#features_train = features_train[:100]
-#target_train = target_train[:100]
 
-#features_dev = features_train
-#target_dev = target_train
+# test normalized augmented
+features_train = prepare_data.load_features_combined('data/normalized/features/test.npy')
+target_train = prepare_data.load_transcripts('data/normalized/augmented/test.txt')
+
+
+features_train = features_train[:5000]
+target_train = target_train[:5000]
+
+features_dev = features_train
+target_dev = target_train
 
 print('Done...')
 
 
 print('Loading embeddings...')
 #embeddings = gensim.models.KeyedVectors.load_word2vec_format('weights/embeddings/fin-word2vec.bin', binary=True, limit=100000)
-#embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
-embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
+embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
+#embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
 print('Done...')
 
 
@@ -126,18 +145,16 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    #checkpoint = torch.load('weights/hybrid_whole/state_dict_7.pt')
-    #encoder.load_state_dict(checkpoint['encoder'])
-    #decoder.load_state_dict(checkpoint['decoder'])
-    #decoder_ner.load_state_dict(checkpoint['decoder_ner'])
-    #encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-    #decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
-    #decoder_ner_optimizer.load_state_dict(checkpoint['decoder_ner_optimizer'])
+    checkpoint = torch.load('weights/asr_new/state_dict_6.pt')
+    encoder.load_state_dict(checkpoint['encoder'])
+    decoder.load_state_dict(checkpoint['decoder'])
+    encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+    decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
 
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/augmented/state_dict_14.pt', map_location=torch.device('cpu'))
+    checkpoint = torch.load('weights/augmented_small/state_dict_17.pt', map_location=torch.device('cpu'))
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
 

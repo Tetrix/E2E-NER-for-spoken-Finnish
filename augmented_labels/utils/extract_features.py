@@ -7,11 +7,12 @@ import scipy.io.wavfile as wav
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
-for filename in os.listdir(os.path.join(current_dir, '../data/audio/whole_small')):
+for filename in os.listdir('audio/'):
     if '.wav' in filename:
-        (rate, sig) = wav.read(os.path.join('../data/audio/whole_small', filename))
-        fbank_feat = logfbank(sig, rate, nfilt=60)
+        (rate, sig) = wav.read(os.path.join('audio', filename))
+        fbank_feat = logfbank(sig, rate, nfilt=40)
+        fbank_feat -= (np.mean(fbank_feat, axis=0) + 1e-8)
 
         filename = filename.split('.wav')[0]
 
-        np.save(os.path.join(current_dir, '../data/features/whole_small', filename), fbank_feat)
+        np.save(os.path.join('features/whole_40', filename), fbank_feat)

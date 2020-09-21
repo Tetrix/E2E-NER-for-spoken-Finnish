@@ -45,7 +45,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
     :return: decoded_batch
     '''
 
-    beam_width = 10
+    beam_width = 9
     topk = 2  # how many sentence do you want to generate
     decoded_batch = []
 
@@ -94,7 +94,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
 
             # decode for one step using decoder
             decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden, encoder_output)
-
+            
             # PUT HERE REAL BEAM SEARCH OF TOP
             log_prob, indexes = torch.topk(decoder_output, beam_width)
             nextnodes = []
@@ -132,7 +132,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
             utterance = utterance[::-1]
             utterances.append(utterance)
             scores.append(score)
-        
+ 
         scores = scores[::-1]
         decoded_batch.append((utterances, scores))
 

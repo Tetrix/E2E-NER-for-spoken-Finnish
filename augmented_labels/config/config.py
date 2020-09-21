@@ -16,4 +16,4 @@ attention_type = 'hybrid'
 batch_size = 10
 num_epochs = 50
 MAX_LENGTH = 300
-skip_training = False
+skip_training = True
