@@ -77,7 +77,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
         # CALCULATE EVALUATION
         with torch.no_grad():
             encoder.eval()
-            #decoder.eval()
+            decoder.eval()
             decoder_ner.eval()
             for _, batch in enumerate(pairs_batch_dev):
                 pad_input_seqs, input_seq_lengths, pad_target_seqs, target_seq_lengths, pad_word_seqs, word_seq_lengths, pad_tag_seqs, tag_seq_lengths = batch
