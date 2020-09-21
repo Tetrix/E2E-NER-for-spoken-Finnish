@@ -10,9 +10,9 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
     lambda_factor = 0.80
     early_stopping = EarlyStopping(patience=10, verbose=False, delta=0)
 
-    for epoch in range(50):
+    for epoch in range(100):
         encoder.train()
-        decoder.train()
+        #decoder.train()
         decoder_ner.train()
  
         for iteration, batch in enumerate(pairs_batch_train):
@@ -77,7 +77,7 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
         # CALCULATE EVALUATION
         with torch.no_grad():
             encoder.eval()
-            decoder.eval()
+            #decoder.eval()
             decoder_ner.eval()
             for _, batch in enumerate(pairs_batch_dev):
                 pad_input_seqs, input_seq_lengths, pad_target_seqs, target_seq_lengths, pad_word_seqs, word_seq_lengths, pad_tag_seqs, tag_seq_lengths = batch
@@ -131,19 +131,19 @@ def train(pairs_batch_train, pairs_batch_dev, encoder, decoder, decoder_ner, enc
         print('[Epoch: %d] train_loss: %.4f    val_loss: %.4f' % (epoch+1, loss.item(), loss_dev.item()))
 
 
-        with open('loss/loss_whole_normalized_ner.txt', 'a') as f:
-            f.write(str(epoch + 1) + '	' + str(loss.item()) + '  ' + str(loss_dev.item()) + '\n')
+        #with open('loss/loss_small_normalized.txt', 'a') as f:
+        #    f.write(str(epoch + 1) + '	' + str(loss.item()) + '  ' + str(loss_dev.item()) + '\n')
 
 
-        print('saving the models...')
-        torch.save({
-        'encoder': encoder.state_dict(),
-        'decoder': decoder.state_dict(),
-        'decoder_ner': decoder_ner.state_dict(),
-        'encoder_optimizer': encoder_optimizer.state_dict(),
-        'decoder_optimizer': decoder_optimizer.state_dict(),
-        'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
-        }, 'weights/whole_normalized_ner/state_dict_' + str(epoch+1) + '.pt')
+        #print('saving the models...')
+        #torch.save({
+        #'encoder': encoder.state_dict(),
+        #'decoder': decoder.state_dict(),
+        #'decoder_ner': decoder_ner.state_dict(),
+        #'encoder_optimizer': encoder_optimizer.state_dict(),
+        #'decoder_optimizer': decoder_optimizer.state_dict(),
+        #'decoder_ner_optimizer': decoder_ner_optimizer.state_dict()
+        #}, 'weights/small_normalized/state_dict_' + str(epoch+1) + '.pt')
         #}, 'weights/state_dict.pt')
 
 
