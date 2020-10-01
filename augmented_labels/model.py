@@ -75,7 +75,7 @@ class Encoder(nn.Module):
         output = self.reduce_resolution(output)    
         input_feature_lengths = np.floor_divide(np.array(input_feature_lengths), 2)
         output = pack_padded_sequence(output, input_feature_lengths)
-        output, hidden = self.lstm_pyramid1(output, hidden)
+        output, hidden = self.lstm_pyramid1(output)
         output = pad_packed_sequence(output)[0]
         output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:] 
       
@@ -83,7 +83,7 @@ class Encoder(nn.Module):
         output = self.reduce_resolution(output) 
         input_feature_lengths = np.floor_divide(np.array(input_feature_lengths), 2)
         output = pack_padded_sequence(output, input_feature_lengths)
-        output, hidden = self.lstm_pyramid2(output, hidden)
+        output, hidden = self.lstm_pyramid2(output)
         output = pad_packed_sequence(output)[0]
         output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:] 
        
@@ -91,7 +91,7 @@ class Encoder(nn.Module):
         output = self.reduce_resolution(output) 
         input_feature_lengths = np.floor_divide(np.array(input_feature_lengths), 2)
         output = pack_padded_sequence(output, input_feature_lengths)
-        output, hidden = self.lstm_pyramid3(output, hidden)
+        output, hidden = self.lstm_pyramid3(output)
         output = pad_packed_sequence(output)[0]
         output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:] 
         
@@ -99,7 +99,7 @@ class Encoder(nn.Module):
         output = self.reduce_resolution(output) 
         input_feature_lengths = np.floor_divide(np.array(input_feature_lengths), 2)
         output = pack_padded_sequence(output, input_feature_lengths)
-        output, hidden = self.lstm_pyramid4(output, hidden)
+        output, hidden = self.lstm_pyramid4(output)
         output = pad_packed_sequence(output)[0]
         output = output[:, :, :self.hidden_size] + output[:, :, self.hidden_size:] 
         
