@@ -202,13 +202,13 @@ class Decoder(nn.Module):
             decoder_output, decoder_hidden_new = self.lstm(embedding, decoder_hidden)
         
             if self.attention_type == 'dot':
-                scores = self.dot_attention_score(encoder_output, decoder_output)
+                scores = self.dot_attention_score(encoder_output, decoder_hidden[0])
 
             if self.attention_type == 'general':
-                scores = self.general_attention_score(encoder_output, decoder_output)
+                scores = self.general_attention_score(encoder_output, decoder_hidden[0])
            
             if self.attention_type == 'concat':
-                scores = self.concat_attention_score(encoder_output, decoder_output)
+                scores = self.concat_attention_score(encoder_output, decoder_hidden[0])
 
             if self.attention_type == 'hybrid':
                 # add location-aware
