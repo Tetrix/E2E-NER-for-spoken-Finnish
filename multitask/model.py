@@ -10,39 +10,6 @@ import numpy as np
 
 
 
-class pBLSTMLayer(nn.Module):
-    def __init__(self, input_tensor, hidden_size):
-        super(pBLSTMLayer, self).__init__()
-        
-        self.input_tensor = input_tensor
-        self.hidden_size = hidden_size
-        self.LSTM = getattr(nn, 'LSTM'.upper())
-
-        # feature dimension will be doubled since time resolution reduction
-        self.BLSTM = self.LSTM(input_tensor*2,
-				hidden_size,
-				num_layers=1, 
-				bidirectional=True)
-
-    
-    def forward(self, input_tensor, device):
-        #pad the input timesteps to be divisible by 2
-        if input_tensor.size(0) % 2 != 0:
-            padding = torch.zeros(1, input_tensor.size(1), input_tensor.size(2), device=device)
-            input_tensor = torch.cat((input_tensor, padding), dim=0)
-        
-
-        batch_size = input_tensor.size(1)
-        timestep = input_tensor.size(0)
-        feature_dim = input_tensor.size(2)
-        # Reduce time resolution
-        input_tensor = input_tensor.contiguous().view(int(timestep/2), batch_size, feature_dim*2)
-        # Bidirectional RNN
-        output, hidden = self.BLSTM(input_tensor)
-        return output, hidden
-
-
-
 class Encoder(nn.Module):
     def __init__(self, input_tensor, hidden_size, num_layers, batch_size, device):
         super(Encoder, self).__init__()
@@ -240,13 +207,13 @@ class Decoder(nn.Module):
             decoder_output, decoder_hidden_new = self.lstm(embedding, decoder_hidden)
         
             if self.attention_type == 'dot':
-                scores = self.dot_attention_score(encoder_output, decoder_output)
+                scores = self.dot_attention_score(encoder_output, decoder_hidden[0])
 
             if self.attention_type == 'general':
-                scores = self.general_attention_score(encoder_output, decoder_output)
+                scores = self.general_attention_score(encoder_output, decoder_hidden[0])
            
             if self.attention_type == 'concat':
-                scores = self.concat_attention_score(encoder_output, decoder_output)
+                scores = self.concat_attention_score(encoder_output, decoder_hidden[0])
 
             if self.attention_type == 'hybrid':
                 # add location-aware
