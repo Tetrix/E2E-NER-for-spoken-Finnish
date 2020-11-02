@@ -204,7 +204,7 @@ class Decoder(nn.Module):
            	
 	# --- multiplicative attention ---
         else:
-            decoder_output, decoder_hidden_new = self.lstm(embedding, decoder_hidden)
+            decoder_output, decoder_hidden = self.lstm(embedding, decoder_hidden)
         
             if self.attention_type == 'dot':
                 scores = self.dot_attention_score(encoder_output, decoder_hidden[0])
@@ -224,7 +224,8 @@ class Decoder(nn.Module):
                     conv_feat = self.conv(F.softmax(random_tensor, dim=-1)).to(self.device).permute(0, 2, 1)
  
                 conv_feat = conv_feat.permute(1, 0, 2)
-                scores = self.hybrid_attention_score(encoder_output, decoder_hidden[0], conv_feat)
+                #scores = self.hybrid_attention_score(encoder_output, decoder_hidden[0], conv_feat)
+                scores = self.hybrid_attention_score(encoder_output, decoder_output, conv_feat)
 
 
             scores = scores.permute(1, 0, 2)
@@ -239,7 +240,7 @@ class Decoder(nn.Module):
         output = self.dropout(output)
         output = F.log_softmax(output, 1)
 
-        return output, decoder_hidden_new
+        return output, decoder_hidden
 
 
     def additive_attention_score(self, encoder_output, decoder_output):
