@@ -23,7 +23,7 @@ from utils.language_model.helpers import *
 torch.manual_seed(0)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-print('augmented_small 17')
+print('libri_asr_big_new clean 11')
 
 print(device)
 
@@ -45,12 +45,29 @@ print('Loading data..')
 #target_dev = prepare_data.load_transcripts('data/normalized/transcripts/dev.txt')
 
 
+# LibriSpeech data ASR
+#features_train = prepare_data.load_features('data/normalized/features/libri/train')
+#target_train = prepare_data.load_transcripts('data/normalized/transcripts/libri/train.txt')
+
+#features_dev = prepare_data.load_features_combined('data/normalized/features/libri/dev.npy')
+#target_dev = prepare_data.load_transcripts('data/normalized/transcripts/libri/dev.txt')
+
+
+
+# whole data LibriSpeech
+#features_train = prepare_data.load_features('data/normalized/features/libri/train')
+#target_train = prepare_data.load_transcripts('data/normalized/augmented/libri_train.txt')
+
+#features_dev = prepare_data.load_features_combined('data/normalized/features/libri/dev.npy')
+#target_dev = prepare_data.load_transcripts('data/normalized/augmented/libri_dev.txt')
+
+
 # whole data normalized augmented
 #features_train = prepare_data.load_features('data/normalized/features/train_small')
 #target_train = prepare_data.load_transcripts('data/normalized/augmented/train_small.txt')
 
 #features_dev = prepare_data.load_features_combined('data/normalized/features/dev_small.npy')
-#arget_dev = prepare_data.load_transcripts('data/normalized/augmented/dev_small.txt')
+#target_dev = prepare_data.load_transcripts('data/normalized/augmented/dev_small.txt')
 
 
 
@@ -60,12 +77,32 @@ print('Loading data..')
 
 
 # test normalized augmented
-features_train = prepare_data.load_features_combined('data/normalized/features/test.npy')
-target_train = prepare_data.load_transcripts('data/normalized/augmented/test.txt')
+#features_train = prepare_data.load_features_combined('data/normalized/features/test.npy')
+#target_train = prepare_data.load_transcripts('data/normalized/augmented/test.txt')
 
 
-features_train = features_train[:5000]
-target_train = target_train[:5000]
+# test LibriSpeech
+#features_train = prepare_data.load_features_combined('data/normalized/features/libri/test_clean.npy')
+#target_train = prepare_data.load_transcripts('data/normalized/augmented/libri_test_clean.txt')
+
+
+# test LibriSpeech ASR
+features_train = prepare_data.load_features_combined('data/normalized/features/libri/test_clean.npy')
+target_train = prepare_data.load_transcripts('data/normalized/transcripts/libri/test_clean.txt')
+
+
+# test English out-of-domain
+#features_train = prepare_data.load_features_combined('data/normalized/features/eng_test/test_eng.npy')
+#target_train = prepare_data.load_transcripts('data/normalized/augmented/eng_test/test_eng.txt')
+
+
+# test English out-of-domain ASR
+#features_train = prepare_data.load_features_combined('data/normalized/features/eng_test/test_eng.npy')
+#target_train = prepare_data.load_transcripts('data/normalized/transcripts/eng_test/test_eng.txt')
+
+
+#features_train = features_train[:10]
+#target_train = target_train[:10]
 
 features_dev = features_train
 target_dev = target_train
@@ -74,18 +111,17 @@ print('Done...')
 
 
 print('Loading embeddings...')
-#embeddings = gensim.models.KeyedVectors.load_word2vec_format('weights/embeddings/fin-word2vec.bin', binary=True, limit=100000)
-embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
+#embeddings = fasttext.load_model('weights/embeddings/cc.fi.300.bin')
+embeddings = fasttext.load_model('weights/embeddings/crawl-300d-2M-subword.bin')
 #embeddings = gensim.models.fasttext.load_facebook_vectors('weights/embeddings/cc.fi.300.bin')
 print('Done...')
 
 
 
-with open('weights/char2idx_augmented.pkl', 'rb') as f:
+with open('weights/char2idx_libri.pkl', 'rb') as f:
     char2idx = pickle.load(f)
-with open('weights/idx2char_augmented.pkl', 'rb') as f:
+with open('weights/idx2char_libri.pkl', 'rb') as f:
     idx2char = pickle.load(f)
-
 
 
 # convert labels to indices
@@ -145,16 +181,16 @@ print('The number of trainable parameters is: %d' % (total_trainable_params_enco
 # train
 if skip_training == False:
     # load weights to continue training from a checkpoint
-    checkpoint = torch.load('weights/asr_new/state_dict_6.pt')
-    encoder.load_state_dict(checkpoint['encoder'])
-    decoder.load_state_dict(checkpoint['decoder'])
-    encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
-    decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
+    #checkpoint = torch.load('weights/libri_asr_big/state_dict_22.pt')
+    #encoder.load_state_dict(checkpoint['encoder'])
+    #decoder.load_state_dict(checkpoint['decoder'])
+    #encoder_optimizer.load_state_dict(checkpoint['encoder_optimizer'])
+    #decoder_optimizer.load_state_dict(checkpoint['decoder_optimizer'])
 
     criterion = nn.NLLLoss(ignore_index=0, reduction='mean')
     train(pairs_batch_train, pairs_batch_dev, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, batch_size, num_epochs, device)
 else:
-    checkpoint = torch.load('weights/augmented_small/state_dict_17.pt', map_location=torch.device('cpu'))
+    checkpoint = torch.load('weights/libri_asr_big_new/state_dict_11.pt', map_location=torch.device('cpu'))
     encoder.load_state_dict(checkpoint['encoder'])
     decoder.load_state_dict(checkpoint['decoder'])
 

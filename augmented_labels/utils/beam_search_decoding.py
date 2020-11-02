@@ -45,7 +45,7 @@ def beam_decode(decoder, target_tensor, decoder_hiddens, pad_target_seq_lengths,
     :return: decoded_batch
     '''
 
-    beam_width = 9
+    beam_width = 2
     topk = 2  # how many sentence do you want to generate
     decoded_batch = []
 

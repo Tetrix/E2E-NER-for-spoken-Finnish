@@ -4,6 +4,7 @@ import os
 import torch
 import torch.autograd as autograd
 from torch.nn.utils.rnn import pad_sequence
+from nltk import word_tokenize
 
 
 # load features combined in one file
@@ -99,18 +100,22 @@ def label_to_idx(labels, char2idx):
     return res
 
 
+
+# TOKENIZER ADDED FOR ENGLISH DATASET!!!!
 def prepare_word_sequence(seq, embeddings):
     res = []
-    seq = seq.split()
+    #seq = seq.split()
+    # for English
+    seq = word_tokenize(seq)
     for w in seq:
         try:
             res.append(embeddings[w])
         except:
-            print(w)
             res.append(np.random.normal(scale=0.6, size=(300, )))
     res = autograd.Variable(torch.FloatTensor(res))
  
     return res
+
 
 
 def word_to_idx(data, embeddings):

@@ -91,28 +91,26 @@ def get_predictions(encoder, decoder, language_model, batch_size, idx2char, test
             #print(rescored_predictions)
 
         
-        #transcripts_predicted, tags_predicted = split_entities(all_predictions)
-        #transcripts_true, tags_true = split_entities(all_labels)
+        transcripts_predicted, tags_predicted = split_entities(all_predictions)
+        transcripts_true, tags_true = split_entities(all_labels)
 
 
-        #np.save('tags_predicted.npy', tags_predicted)
-        #np.save('transcripts_predicted.npy', transcripts_predicted)
+        #np.save('tags_predicted_eng.npy', tags_predicted)
+        #np.save('transcripts_predicted_eng.npy', transcripts_predicted)
 
 
-        #print('Word error rate: ', wer(transcripts_true, transcripts_predicted) * 100)
-        print('Word error rate: ', wer(all_labels, all_predictions) * 100)
+        print('Word error rate: ', wer(transcripts_true, transcripts_predicted) * 100)
+        #print('Word error rate: ', wer(all_labels, all_predictions) * 100)
         #print('Word error rate: ', wer(all_labels, all_predictions_rescored) * 100)
 
        
 
-        #transcripts_predicted = np.load('transcripts_predicted.npy')
-        #tags_predicted = np.load('tags_predicted.npy', allow_pickle=True)
+        #transcripts_predicted = np.load('transcripts_predicted_eng.npy')
+        #tags_predicted = np.load('tags_predicted_eng.npy', allow_pickle=True)
 
-        #print(transcripts_predicted[0])
-        #print(tags_predicted[0])
 
         # save ASR output
-        #with open('output/asr_output.txt', 'w') as f:
+        #with open('output/e2e_asr.txt', 'w') as f:
         #    for i in range(len(transcripts_predicted)):
         #        sentence = transcripts_predicted[i].split()
         #        for j in range(len(sentence)):
@@ -137,8 +135,6 @@ def get_predictions(encoder, decoder, language_model, batch_size, idx2char, test
         #    if len(conventional_tags[i]) > len(tags_predicted[i]):
         #        tags_predicted[i].append('O')
 
-        ##print(tags_predicted[1:])
-        ##print(conventional_tags[1:])
 
         #print('Micro AVG F1')
         #print_scores(tags_predicted, conventional_tags)
