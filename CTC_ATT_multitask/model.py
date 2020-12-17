@@ -114,90 +114,38 @@ class Decoder(nn.Module):
         self.embedding = nn.Embedding(output_size, embedding_dim)
          
 
-        if attention_type == 'additive':
-            self.lstm = nn.LSTM(self.embedding_dim+self.encoder_hidden_size,
-                                self.encoder_hidden_size,
-                                num_layers=self.num_layers,
-			        bidirectional=False)
-            
-            self.out = nn.Linear(self.encoder_hidden_size, self.output_size)
-            
-            self.v = nn.Parameter(torch.FloatTensor(1, self.encoder_hidden_size).uniform_(-0.1, 0.1))
+        self.lstm = nn.LSTM(self.embedding_dim,
+                            self.encoder_hidden_size,
+                            num_layers=self.num_layers,
+			    bidirectional=False)
+        
+        self.out = nn.Linear(self.encoder_hidden_size*2, self.output_size)    
 
-            self.W_1 = torch.nn.Linear(self.encoder_hidden_size, self.encoder_hidden_size, bias=False)
-            self.W_2 = torch.nn.Linear(self.encoder_hidden_size, self.encoder_hidden_size, bias=False)
-
-
-        else:
-            self.lstm = nn.LSTM(self.embedding_dim,
-                                self.encoder_hidden_size,
-                                num_layers=self.num_layers,
-			        bidirectional=False)
-            self.out = nn.Linear(self.encoder_hidden_size*2, self.output_size)
-            
-            if attention_type == 'general':
-                self.fc = nn.Linear(self.encoder_hidden_size, self.attention_hidden_size, bias=False)
-            
-            if attention_type == 'concat':
-                self.fc = nn.Linear(self.encoder_hidden_size, self.attention_hidden_size, bias=False)
-                self.v = nn.Parameter(torch.FloatTensor(1, self.encoder_hidden_size))
-
-            if attention_type == 'hybrid':
-                self.v = nn.Parameter(torch.FloatTensor(1, self.encoder_hidden_size).uniform_(-0.1, 0.1))
-                self.b = nn.Parameter(torch.FloatTensor(self.encoder_hidden_size).uniform_(-0.1, 0.1))
-
-                self.W_1 = torch.nn.Linear(self.encoder_hidden_size, self.attention_hidden_size)
-                self.W_2 = torch.nn.Linear(self.encoder_hidden_size, self.attention_hidden_size)
-                self.W_3 = nn.Linear(self.num_filters, self.attention_hidden_size)
-                self.conv = nn.Conv1d(in_channels=1, out_channels=self.num_filters, kernel_size=3, padding=1)
-            
-    
+        self.v = nn.Parameter(torch.FloatTensor(1, self.encoder_hidden_size).uniform_(-0.1, 0.1))
+        self.b = nn.Parameter(torch.FloatTensor(self.encoder_hidden_size).uniform_(-0.1, 0.1))
+        self.W_1 = torch.nn.Linear(self.encoder_hidden_size, self.attention_hidden_size)
+        self.W_2 = torch.nn.Linear(self.encoder_hidden_size, self.attention_hidden_size)
+        self.W_3 = nn.Linear(self.num_filters, self.attention_hidden_size)
+        self.conv = nn.Conv1d(in_channels=1, out_channels=self.num_filters, kernel_size=3, padding=1)
+                
 	
        
     def forward(self, input_tensor, decoder_hidden, encoder_output, attn_weights):
         embedding = self.embedding(input_tensor)
         embedding = embedding.permute(1, 0, 2)
-       	
-	# --- additive attention ---
-        if self.attention_type == 'additive': 
-            scores = self.hybrid_attention_score(encoder_output, decoder_hidden)
-            attn_weights = F.softmax(scores, dim=0)
-            context = torch.bmm(attn_weights.permute(0, 2, 1), encoder_output.permute(1, 0, 2))
-            context = context.permute(1, 0, 2)
-            output = torch.cat((context, embedding), -1)
-            lstm_output, lstm_hidden = self.lstm(output, decoder_hidden)
-            output = self.out(lstm_output.squeeze(0))
-	# --- end additive attention ---	
- 
-           	
-	# --- multiplicative attention ---
-        else:
-            decoder_output, decoder_hidden = self.lstm(embedding, decoder_hidden)
-        
-            if self.attention_type == 'dot':
-                scores = self.dot_attention_score(encoder_output, decoder_hidden[0])
+       	           	
+        decoder_output, decoder_hidden = self.lstm(embedding, decoder_hidden)
+                        
+        conv_feat = self.conv(attn_weights).permute(0, 2, 1) 
+        conv_feat = conv_feat.permute(1, 0, 2)
+        scores = self.hybrid_attention_score(encoder_output, decoder_output, conv_feat)
 
-            if self.attention_type == 'general':
-                scores = self.general_attention_score(encoder_output, decoder_hidden[0])
-           
-            if self.attention_type == 'concat':
-                scores = self.concat_attention_score(encoder_output, decoder_hidden[0])
-
-            if self.attention_type == 'hybrid':
-                # add location-aware
-                
-                conv_feat = self.conv(attn_weights).permute(0, 2, 1) 
-                conv_feat = conv_feat.permute(1, 0, 2)
-                scores = self.hybrid_attention_score(encoder_output, decoder_output, conv_feat)
-
-
-            scores = scores.permute(1, 0, 2)
-            attn_weights = F.softmax(scores, dim=0)
-            context = torch.bmm(attn_weights.permute(1, 2 ,0), encoder_output.permute(1, 0, 2))
-            context = context.permute(1, 0, 2)
-            output = torch.cat((context, decoder_output), -1)
-            output = self.out(output[0])
-        # --- end multiplicative attention ---
+        scores = scores.permute(1, 0, 2)
+        attn_weights = F.softmax(scores, dim=0)
+        context = torch.bmm(attn_weights.permute(1, 2 ,0), encoder_output.permute(1, 0, 2))
+        context = context.permute(1, 0, 2)
+        output = torch.cat((context, decoder_output), -1)
+        output = self.out(output[0])
  
 
         output = self.dropout(output)
@@ -205,28 +153,7 @@ class Decoder(nn.Module):
         return output, decoder_hidden, attn_weights.permute(1, 2, 0)
 
 
-    def additive_attention_score(self, encoder_output, decoder_output):
-        out = torch.tanh(self.W_1(decoder_output + encoder_output))
-        v = self.v.repeat(encoder_output.data.shape[1], 1).unsqueeze(1)
-        out = out.permute(1, 0, 2)
-        v = v.permute(0, 2, 1)
-        scores = out.bmm(v)
-        return scores
-
-
-    def dot_attention_score(self, encoder_output, decoder_output):
-        scores = torch.bmm(encoder_output.permute(1, 0, 2), decoder_output.permute(1, 2, 0))
-        return scores
-
-
-    def general_attention_score(self, encoder_output, decoder_output):
-        out = self.fc(decoder_output)
-        encoder_output = encoder_output.permute(1, 0, 2)
-        out = out.permute(1, 2, 0)
-        scores = encoder_output.bmm(out)
-        return scores
-
-   
+      
     def hybrid_attention_score(self, encoder_output, decoder_output, conv_feat):
         out = torch.tanh(self.W_1(decoder_output) + self.W_2(encoder_output) + self.W_3(conv_feat) + self.b)
         v = self.v.repeat(encoder_output.data.shape[1], 1).unsqueeze(1)
@@ -236,15 +163,6 @@ class Decoder(nn.Module):
         return scores
 
     
-    def concat_attention_score(self, encoder_output, decoder_output):
-        out = torch.tanh(self.fc(decoder_output + encoder_output))
-        v = self.v.repeat(encoder_output.data.shape[1], 1).unsqueeze(1)
-        out = out.permute(1, 0, 2)
-        v = v.permute(0, 2, 1)
-        scores = out.bmm(v)
-        return scores
-
-
 
 
 
