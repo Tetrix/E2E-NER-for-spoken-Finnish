@@ -1,7 +1,7 @@
 # E2E-NER-for-spoken-Finnish
 This repository contains two approaches for doing end-to-end named entity recognition from speech.
 
-The "augmented labels" approach is similar to the standard attention-based encoder-decoder speech recognition, but instead of using normal transcripts, named entity augmented transcripts are used. Example "Canada LOC is O cold O , O said O Lucas PER"
+The "augmented labels" approach is similar to the standard attention-based encoder-decoder speech recognition, but instead of using normal transcripts, named entity augmented transcripts are used. Example `Canada LOC is O cold O , O said O Lucas PER`
 
 The "multi-task" approach is attention-based encoder-decoder model, consisting of two decoder branches: one for ASR and one for NER. The encoder is shared between the branches.
 
