@@ -11,8 +11,9 @@ destination = 'features/path'
 for filename in os.listdir(path_to_files):
     if '.wav' in filename:
         (rate, sig) = wav.read(os.path.join(path_to_files, filename))
-        fbank_feat = logfbank(sig, rate, nfilt=60)
-
+        fbank_feat = logfbank(sig, rate, nfilt=40)
+        fbank_feat -= (np.mean(fbank_feat, axis=0) + 1e-8)
+        
         filename = filename.split('.wav')[0]
 
         np.save(os.path.join(destination, filename), fbank_feat)
