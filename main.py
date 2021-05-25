@@ -13,12 +13,6 @@ from config.config import *
 from train import train
 from get_predictions import get_predictions
 
-#from utils.language_model.model import CharRNN
-#from utils.language_model.helpers import *
-
-#from utils.language_model_eng.model import RNNModel
-#import utils.language_model_eng.data as data
-
 
 
 torch.manual_seed(0)
@@ -32,33 +26,14 @@ print(device)
 print('Loading data..')
 
 # Parliament data
-#features_train = prepare_data.load_features('../augmented_labels/data/normalized/features/train')
-#target_train = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/train.txt')
-#tags_train = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_train.txt')
+features_train = prepare_data.load_features('../augmented_labels/data/normalized/features/train')
+target_train = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/train.txt')
+tags_train = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_train.txt')
 
-#features_dev = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/dev.npy')
-#target_dev = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/dev.txt')
-#tags_dev = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_dev.txt')
+features_dev = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/dev.npy')
+target_dev = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/dev.txt')
+tags_dev = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_dev.txt')
 
-
-# test Parliament
-features_train = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/test.npy')
-target_train = prepare_data.load_transcripts('../augmented_labels/data/normalized/transcripts/test.txt')
-tags_train = prepare_data.load_tags('../augmented_labels/data/normalized/ner/ner_test.txt')
-
-
-# compare againt conventional NER
-#features_train = prepare_data.load_features_combined('../augmented_labels/data/normalized/features/test.npy')
-#target_train = prepare_data.load_transcripts('output/parliament/e2e_asr_combined.txt')
-#tags_train = prepare_data.load_tags('output/parliament/conventional_ner.txt')
-#
-features_train = features_train[:50]
-target_train = target_train[:50]
-tags_train = tags_train[:50]
-
-features_dev = features_train
-target_dev = target_train
-tags_dev = tags_train
 
 
 print('Done...')
@@ -140,7 +115,6 @@ decoder_ner = DecoderNER(embedding_dim_words, decoder_ner_hidden_size, len(tag2i
 decoder_ner_optimizer = optim.Adam(decoder_ner.parameters(), lr=decoder_ner_lr)
 
 
-#print(vgg_extractor)
 print(encoder)
 print(decoder)
 print(decoder_ner)
@@ -180,16 +154,3 @@ else:
     decoder.load_state_dict(checkpoint['decoder'])
     decoder_ner.load_state_dict(checkpoint['decoder_ner'])
 
-
-
-# Evaluate the model
-batch_size = 1
-
-pairs_batch_train = DataLoader(dataset=dev_data,
-                    batch_size=batch_size,
-                    shuffle=False,
-                    collate_fn=prepare_data.collate,
-                    pin_memory=True)
-
-
-get_predictions(encoder, decoder, decoder_ner, batch_size, idx2char, idx2tag, pairs_batch_train, MAX_LENGTH)
