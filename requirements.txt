@@ -13,7 +13,7 @@ python-speech-features==0.6
 pytorch-crf==0.7.2
 regex==2021.4.4
 scipy==1.6.3
-torch==1.7.1+cu101
+torch==1.13.1
 torchaudio==0.7.2
 torchvision==0.8.2+cu101
 tqdm==4.61.0
