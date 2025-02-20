@@ -17,3 +17,17 @@ The Swedish embeddings can be downloaded from: https://dl.fbaipublicfiles.com/fa
 The Finnish embeddings can be downloaded from: https://dl.fbaipublicfiles.com/fasttext/vectors-crawl/cc.fi.300.bin.gz .
 
 The embeddings need to be placed in `weights/embeddings`, for each of the models.
+
+
+## Cite the paper
+
+```
+@inproceedings{porjazovski2021attention,
+  title={Attention-based end-to-end named entity recognition from speech},
+  author={Porjazovski, Dejan and Leinonen, Juho and Kurimo, Mikko},
+  booktitle={Text, Speech, and Dialogue: 24th International Conference, TSD 2021, Olomouc, Czech Republic, September 6--9, 2021, Proceedings 24},
+  pages={469--480},
+  year={2021},
+  organization={Springer}
+}
+```
